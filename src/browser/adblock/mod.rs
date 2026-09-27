@@ -1,13 +1,14 @@
 mod download;
 mod filters;
 mod sanitize;
+mod youtube;
 
 use std::cell::Cell;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 use gtk::{gio, glib};
-use webkit6::{UserContentFilter, UserContentFilterStore, UserContentManager};
+use webkit6::{UserContentFilter, UserContentFilterStore, UserContentManager, UserScript};
 
 use crate::library::files;
 use crate::utils::clock::unix_now;
@@ -17,6 +18,7 @@ pub struct AdBlocker {
     content: UserContentManager,
     store: UserContentFilterStore,
     timestamp: PathBuf,
+    player_ads: UserScript,
     enabled: Rc<Cell<bool>>,
 }
 
@@ -26,6 +28,7 @@ impl AdBlocker {
             content: UserContentManager::new(),
             store: UserContentFilterStore::new(&directory.to_string_lossy()),
             timestamp: directory.join(filters::TIMESTAMP_FILE),
+            player_ads: youtube::player_ads_script(),
             enabled: Rc::new(Cell::new(false)),
         }
     }
@@ -36,7 +39,9 @@ impl AdBlocker {
 
     pub fn set_enabled(&self, enabled: bool) {
         self.enabled.set(enabled);
+        self.content.remove_script(&self.player_ads);
         if enabled {
+            self.content.add_script(&self.player_ads);
             glib::spawn_future_local(self.clone().activate());
         } else {
             self.content.remove_all_filters();
@@ -44,6 +49,7 @@ impl AdBlocker {
     }
 
     async fn activate(self) {
+        self.install_extra_rules().await;
         match self.store.load_future(filters::FILTER_ID).await {
             Ok(filter) => {
                 self.install(&filter);
@@ -75,12 +81,24 @@ impl AdBlocker {
         }
     }
 
-    fn install(&self, filter: &UserContentFilter) {
-        if !self.enabled.get() {
-            return;
+    async fn install_extra_rules(&self) {
+        let rules = glib::Bytes::from_static(filters::EXTRA_RULES.as_bytes());
+        match self
+            .store
+            .save_future(filters::EXTRA_FILTER_ID, &rules)
+            .await
+        {
+            Ok(filter) => self.install(&filter),
+            Err(error) => {
+                eprintln!("Não foi possível compilar as regras extras de bloqueio: {error}")
+            }
         }
-        self.content.remove_all_filters();
-        self.content.add_filter(filter);
+    }
+
+    fn install(&self, filter: &UserContentFilter) {
+        if self.enabled.get() {
+            self.content.add_filter(filter);
+        }
     }
 
     fn needs_update(&self) -> bool {

@@ -1,0 +1,20 @@
+[
+  {
+    "trigger": {
+      "url-filter": "^[^:]+:(//)?([^/]+\\.)?youtube\\.com[/:]"
+    },
+    "action": {
+      "type": "css-display-none",
+      "selector": "ytd-ad-slot-renderer, ytd-in-feed-ad-layout-renderer, ytd-banner-promo-renderer, ytd-statement-banner-renderer, ytd-promoted-video-renderer, ytd-promoted-sparkles-web-renderer, ytd-merch-shelf-renderer, ytd-rich-item-renderer:has(ytd-ad-slot-renderer), ytd-engagement-panel-section-list-renderer[target-id=\"engagement-panel-ads\"], #masthead-ad, #player-ads, .ytp-ad-module, .video-ads"
+    }
+  },
+  {
+    "trigger": {
+      "url-filter": "^[^:]+:(//)?([^/]+\\.)?m\\.youtube\\.com[/:]"
+    },
+    "action": {
+      "type": "css-display-none",
+      "selector": "ytm-promoted-sparkles-web-renderer, ytm-companion-ad-renderer, ad-slot-renderer"
+    }
+  }
+]
