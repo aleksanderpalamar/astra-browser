@@ -8,12 +8,12 @@ use crate::ui::tabs::{Direction, Tabs};
 use crate::ui::toolbar::Toolbar;
 
 #[derive(Clone)]
-pub struct HistoryActions {
+pub struct BackForwardActions {
     back: gio::SimpleAction,
     forward: gio::SimpleAction,
 }
 
-impl HistoryActions {
+impl BackForwardActions {
     pub fn update(&self, webview: &WebView) {
         self.back.set_enabled(webview.can_go_back());
         self.forward.set_enabled(webview.can_go_forward());
@@ -59,8 +59,8 @@ impl Handler {
     }
 }
 
-pub fn install(window: &ApplicationWindow, tabs: &Tabs, toolbar: &Toolbar) -> HistoryActions {
-    let history = HistoryActions {
+pub fn install(window: &ApplicationWindow, tabs: &Tabs, toolbar: &Toolbar) -> BackForwardActions {
+    let back_forward = BackForwardActions {
         back: register_browser_action(window, BrowserAction::Back, tabs, toolbar),
         forward: register_browser_action(window, BrowserAction::Forward, tabs, toolbar),
     };
@@ -70,7 +70,7 @@ pub fn install(window: &ApplicationWindow, tabs: &Tabs, toolbar: &Toolbar) -> Hi
         .for_each(|action| {
             register_browser_action(window, action, tabs, toolbar);
         });
-    history
+    back_forward
 }
 
 fn register_browser_action(

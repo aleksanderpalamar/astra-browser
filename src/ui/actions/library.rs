@@ -4,10 +4,11 @@ use super::ActionSpec;
 pub enum LibraryAction {
     ToggleBookmark,
     ShowBookmarks,
+    ShowHistory,
 }
 
 impl LibraryAction {
-    pub const ALL: [Self; 2] = [Self::ToggleBookmark, Self::ShowBookmarks];
+    pub const ALL: [Self; 3] = [Self::ToggleBookmark, Self::ShowBookmarks, Self::ShowHistory];
 }
 
 impl ActionSpec for LibraryAction {
@@ -17,6 +18,7 @@ impl ActionSpec for LibraryAction {
         match self {
             Self::ToggleBookmark => "toggle-bookmark",
             Self::ShowBookmarks => "show-bookmarks",
+            Self::ShowHistory => "show-history",
         }
     }
 
@@ -24,6 +26,7 @@ impl ActionSpec for LibraryAction {
         match self {
             Self::ToggleBookmark => &["<Control>d"],
             Self::ShowBookmarks => &["<Control><Shift>o"],
+            Self::ShowHistory => &["<Control>h"],
         }
     }
 }
@@ -48,5 +51,14 @@ mod tests {
     fn bookmark_shortcuts_are_registered() {
         assert_eq!(LibraryAction::ToggleBookmark.accels(), ["<Control>d"]);
         assert_eq!(LibraryAction::ShowBookmarks.accels(), ["<Control><Shift>o"]);
+    }
+
+    #[test]
+    fn history_shortcut_is_registered() {
+        assert_eq!(
+            LibraryAction::ShowHistory.detailed_name(),
+            "win.show-history"
+        );
+        assert_eq!(LibraryAction::ShowHistory.accels(), ["<Control>h"]);
     }
 }

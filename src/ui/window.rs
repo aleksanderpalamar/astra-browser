@@ -8,7 +8,7 @@ use crate::library::Library;
 use crate::ui::tabs::Tabs;
 use crate::ui::title::APP_NAME;
 use crate::ui::toolbar::Toolbar;
-use crate::ui::{actions, bookmarks, sync};
+use crate::ui::{actions, bookmarks, history, sync};
 
 const DEFAULT_WIDTH: i32 = 1280;
 const DEFAULT_HEIGHT: i32 = 800;
@@ -23,9 +23,10 @@ pub fn build(app: &Application, library: &Library) {
         .default_height(DEFAULT_HEIGHT)
         .child(&layout(&toolbar, &tabs))
         .build();
-    let history = actions::install(&window, &tabs, &toolbar);
-    sync::bind(&tabs, &window, &toolbar, history);
+    let back_forward = actions::install(&window, &tabs, &toolbar);
+    sync::bind(&tabs, &window, &toolbar, back_forward);
     bookmarks::install(&window, &tabs, &toolbar, Rc::clone(&library.bookmarks));
+    history::install(&window, &tabs, &toolbar, Rc::clone(&library.history));
     release_tabs_on_close(&window, tabs.clone());
     tabs.open(HOME_URI);
     window.present();

@@ -2,12 +2,17 @@ use gtk::prelude::*;
 use gtk::{ApplicationWindow, glib};
 use webkit6::prelude::*;
 
-use crate::ui::actions::HistoryActions;
+use crate::ui::actions::BackForwardActions;
 use crate::ui::tabs::{TabProperty, Tabs};
 use crate::ui::title::window_title;
 use crate::ui::toolbar::Toolbar;
 
-pub fn bind(tabs: &Tabs, window: &ApplicationWindow, toolbar: &Toolbar, history: HistoryActions) {
+pub fn bind(
+    tabs: &Tabs,
+    window: &ApplicationWindow,
+    toolbar: &Toolbar,
+    back_forward: BackForwardActions,
+) {
     tabs.watch_current(
         &[TabProperty::Uri],
         glib::clone!(
@@ -33,6 +38,6 @@ pub fn bind(tabs: &Tabs, window: &ApplicationWindow, toolbar: &Toolbar, history:
         ),
     );
     tabs.watch_current(&[TabProperty::Uri, TabProperty::Loading], move |webview| {
-        history.update(webview);
+        back_forward.update(webview);
     });
 }

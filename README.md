@@ -24,6 +24,9 @@ renderização feita pelo **WebKitGTK 6.0**. Toda a aplicação ao redor da engi
 - Favoritos: a estrela na barra de endereço (ou `Ctrl+D`) adiciona/remove a
   página atual; o botão de favoritos na toolbar (ou `Ctrl+Shift+O`) lista os
   favoritos para abrir ou remover. Ficam salvos entre execuções.
+- Histórico persistente: cada página visitada é registrada; o botão de
+  histórico (ou `Ctrl+H`) lista as visitas mais recentes, com busca por título
+  ou endereço e opção de limpar tudo.
 - Links que pedem nova janela (`target="_blank"`) abrem em uma nova aba;
   pop-ups abertos sem interação do usuário são bloqueados.
 - Falhas de carregamento exibem a página de erro do WebKit e são registradas no
@@ -91,6 +94,7 @@ cargo clippy -- -D warnings
 | `Ctrl+Shift+Tab` / `Ctrl+PgUp` | Aba anterior                           |
 | `Ctrl+D`                       | Adicionar/remover dos favoritos        |
 | `Ctrl+Shift+O`                 | Abrir a lista de favoritos             |
+| `Ctrl+H`                       | Abrir o histórico                      |
 | `Ctrl+Q`                       | Fechar o navegador                     |
 | `Enter` (no endereço)          | Abrir URL ou pesquisar                 |
 
@@ -106,7 +110,10 @@ src/
 ├── library/
 │   ├── bookmarks.rs     favoritos: regras (adicionar, remover, formato do arquivo)
 │   ├── bookmark_store.rs favoritos persistidos em disco
-│   ├── files.rs         caminhos de dados e gravação atômica
+│   ├── history/         histórico: registro, busca e limite de visitas
+│   ├── history_store.rs histórico persistido em disco (somente acréscimo)
+│   ├── visit.rs         visita: formato da linha e páginas registráveis
+│   ├── files.rs         caminhos de dados, gravação atômica e acréscimo
 │   └── tsv.rs           codificação das linhas dos arquivos de dados
 ├── browser/
 │   ├── media_formats.rs formatos de mídia essenciais e mensagem de aviso
@@ -117,19 +124,20 @@ src/
 │   ├── actions/
 │   │   ├── spec.rs      ActionSpec: contrato comum (nome, escopo, atalhos)
 │   │   ├── catalog.rs   BrowserAction: navegação e abas
-│   │   ├── library.rs   LibraryAction: favoritos
+│   │   ├── library.rs   LibraryAction: favoritos e histórico
 │   │   └── handler.rs   execução das ações de navegação sobre a aba ativa
 │   ├── library/
 │   │   ├── panel.rs     painel (botão + popover) reutilizável da biblioteca
 │   │   └── link_row.rs  linha com título, endereço e remoção
 │   ├── address_bar.rs   barra de endereço e estrela de favorito
 │   ├── bookmarks.rs     favoritos na interface: estrela, painel e ações
+│   ├── history.rs       registro das visitas e painel de histórico
 │   ├── tabs/
 │   │   ├── mod.rs       Tabs: abrir, fechar, selecionar e pop-ups em nova aba
 │   │   ├── label.rs     rótulo da aba (título + botão fechar)
 │   │   ├── order.rs     navegação circular entre abas
 │   │   └── watch.rs     observação de propriedades da aba ativa
-│   ├── sync.rs          aba ativa → endereço, título, spinner, histórico
+│   ├── sync.rs          aba ativa → endereço, título, spinner, voltar/avançar
 │   ├── title.rs         títulos da janela e das abas
 │   ├── toolbar.rs       widgets da toolbar
 │   └── window.rs        composição da janela
@@ -155,13 +163,14 @@ src/
   e as closures os capturam por referência fraca, sem ciclos de referência.
 - **Regras de domínio puras e testadas:** a resolução de endereço (`utils/url.rs`,
   usando as crates `url` e `percent-encoding`), os títulos (`ui/title.rs`), a
-  ordem das abas (`ui/tabs/order.rs`) e as regras de favoritos
-  (`library/bookmarks.rs`) são determinísticas e têm testes unitários.
+  ordem das abas (`ui/tabs/order.rs`) e as regras de favoritos e histórico
+  (`library/`) são determinísticas e têm testes unitários.
 
 Cookies, cache e armazenamento de sites ficam na sessão padrão do WebKit, em
 `~/.local/share/rust-browser` e `~/.cache/rust-browser`. Os favoritos ficam em
 `~/.local/share/rust-browser/bookmarks.tsv` (uma linha por favorito:
-endereço e título separados por tab).
+endereço e título separados por tab) e o histórico em `history.tsv` no mesmo
+diretório (data, endereço e título), limitado às 5 000 visitas mais recentes.
 
 ## Tecnologias
 
@@ -173,8 +182,8 @@ endereço e título separados por tab).
 
 ## Limitações conhecidas
 
-- Sem histórico persistente, downloads, modo privado ou bloqueador de
-  anúncios (fora do escopo desta versão).
+- Sem downloads, modo privado ou bloqueador de anúncios (fora do escopo
+  desta versão).
 - Domínios sem esquema sempre recebem `https://`; servidores locais só em HTTP
   (ex.: `localhost:3000`) precisam de `http://` explícito.
 - A detecção de domínio é heurística: nomes de host sem ponto (ex.: `intranet`)
