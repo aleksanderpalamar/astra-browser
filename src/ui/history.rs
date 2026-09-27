@@ -5,6 +5,7 @@ use gtk::{ApplicationWindow, Box as GtkBox, Button, SearchEntry, glib};
 use webkit6::prelude::*;
 use webkit6::{LoadEvent, WebView};
 
+use crate::browser::mode::BrowsingMode;
 use crate::library::history_store::HistoryStore;
 use crate::library::visit::Visit;
 use crate::ui::actions::{self, LibraryAction};
@@ -100,8 +101,11 @@ pub fn install(
     tabs: &Tabs,
     toolbar: &Toolbar,
     store: Rc<HistoryStore>,
+    mode: BrowsingMode,
 ) {
-    record_visits(tabs, &store);
+    if mode.records_history() {
+        record_visits(tabs, &store);
+    }
     let search = SearchEntry::builder()
         .placeholder_text("Buscar no histórico")
         .build();

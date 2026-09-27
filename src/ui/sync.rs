@@ -2,6 +2,7 @@ use gtk::prelude::*;
 use gtk::{ApplicationWindow, glib};
 use webkit6::prelude::*;
 
+use crate::browser::mode::BrowsingMode;
 use crate::ui::actions::BackForwardActions;
 use crate::ui::tabs::{TabProperty, Tabs};
 use crate::ui::title::window_title;
@@ -12,6 +13,7 @@ pub fn bind(
     window: &ApplicationWindow,
     toolbar: &Toolbar,
     back_forward: BackForwardActions,
+    mode: BrowsingMode,
 ) {
     tabs.watch_current(
         &[TabProperty::Uri],
@@ -34,7 +36,7 @@ pub fn bind(
         glib::clone!(
             #[weak]
             window,
-            move |webview| window.set_title(Some(&window_title(webview.title().as_deref())))
+            move |webview| window.set_title(Some(&window_title(webview.title().as_deref(), mode)))
         ),
     );
     tabs.watch_current(&[TabProperty::Uri, TabProperty::Loading], move |webview| {

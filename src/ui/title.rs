@@ -1,10 +1,17 @@
+use crate::browser::mode::BrowsingMode;
+
 pub const APP_NAME: &str = "Rust Browser";
 pub const NEW_TAB_TITLE: &str = "Nova aba";
+const PRIVATE_SUFFIX: &str = " (navegação privada)";
 
-pub fn window_title(page_title: Option<&str>) -> String {
+pub fn window_title(page_title: Option<&str>, mode: BrowsingMode) -> String {
+    let suffix = match mode {
+        BrowsingMode::Normal => "",
+        BrowsingMode::Private => PRIVATE_SUFFIX,
+    };
     match page_title.map(str::trim).filter(|title| !title.is_empty()) {
-        Some(title) => format!("{title} — {APP_NAME}"),
-        None => APP_NAME.to_owned(),
+        Some(title) => format!("{title} — {APP_NAME}{suffix}"),
+        None => format!("{APP_NAME}{suffix}"),
     }
 }
 
@@ -21,27 +28,40 @@ pub fn tab_title(page_title: Option<&str>, uri: Option<&str>) -> String {
 #[cfg(test)]
 mod tests {
     use super::{APP_NAME, NEW_TAB_TITLE, tab_title, window_title};
+    use crate::browser::mode::BrowsingMode::{Normal, Private};
 
     #[test]
     fn appends_app_name_to_page_title() {
         assert_eq!(
-            window_title(Some("GitHub · Build and ship software")),
+            window_title(Some("GitHub · Build and ship software"), Normal),
             "GitHub · Build and ship software — Rust Browser"
         );
     }
 
     #[test]
     fn falls_back_to_app_name_without_page_title() {
-        assert_eq!(window_title(None), APP_NAME);
-        assert_eq!(window_title(Some("")), APP_NAME);
-        assert_eq!(window_title(Some("   ")), APP_NAME);
+        assert_eq!(window_title(None, Normal), APP_NAME);
+        assert_eq!(window_title(Some(""), Normal), APP_NAME);
+        assert_eq!(window_title(Some("   "), Normal), APP_NAME);
     }
 
     #[test]
     fn trims_page_title() {
         assert_eq!(
-            window_title(Some("  DuckDuckGo \n")),
+            window_title(Some("  DuckDuckGo \n"), Normal),
             "DuckDuckGo — Rust Browser"
+        );
+    }
+
+    #[test]
+    fn private_windows_are_labeled() {
+        assert_eq!(
+            window_title(Some("GitHub"), Private),
+            "GitHub — Rust Browser (navegação privada)"
+        );
+        assert_eq!(
+            window_title(None, Private),
+            "Rust Browser (navegação privada)"
         );
     }
 

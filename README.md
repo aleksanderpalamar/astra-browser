@@ -31,6 +31,12 @@ renderização feita pelo **WebKitGTK 6.0**. Toda a aplicação ao redor da engi
   pasta de Downloads do usuário (sem sobrescrever: `foto (1).png`); o painel de
   downloads (ou `Ctrl+Shift+Y`) mostra progresso, permite cancelar e abrir o
   arquivo concluído.
+- Modo privado: `Ctrl+Shift+P` (ou o menu principal) abre uma janela privada,
+  identificada pelo selo "Privado" e pelo título. Ela usa uma sessão efêmera
+  do WebKit (cookies, cache e armazenamento só em memória, descartados ao
+  fechar a janela) e não grava histórico.
+- Várias janelas: `Ctrl+N` abre uma nova janela normal; o menu principal reúne
+  nova aba, nova janela, nova janela privada e sair.
 - Links que pedem nova janela (`target="_blank"`) abrem em uma nova aba;
   pop-ups abertos sem interação do usuário são bloqueados.
 - Falhas de carregamento exibem a página de erro do WebKit e são registradas no
@@ -100,6 +106,9 @@ cargo clippy -- -D warnings
 | `Ctrl+Shift+O`                 | Abrir a lista de favoritos             |
 | `Ctrl+H`                       | Abrir o histórico                      |
 | `Ctrl+Shift+Y`                 | Abrir os downloads                     |
+| `Ctrl+N`                       | Nova janela                            |
+| `Ctrl+Shift+P`                 | Nova janela privada                    |
+| `F10`                          | Abrir o menu principal                 |
 | `Ctrl+Q`                       | Fechar o navegador                     |
 | `Enter` (no endereço)          | Abrir URL ou pesquisar                 |
 
@@ -125,11 +134,13 @@ src/
 │   ├── download_name.rs nome de destino único e seguro na pasta de downloads
 │   ├── media_formats.rs formatos de mídia essenciais e mensagem de aviso
 │   ├── media_support.rs consulta ao WebKit sobre os formatos suportados
+│   ├── mode.rs          BrowsingMode: sessão de rede e gravação de histórico
 │   ├── navigation.rs    abrir endereço digitado e ir para a página inicial
 │   └── webview.rs       criação do WebView e registro de falhas reais
 ├── ui/
 │   ├── actions/
 │   │   ├── spec.rs      ActionSpec: contrato comum (nome, escopo, atalhos)
+│   │   ├── app.rs       AppAction: nova janela, janela privada e sair
 │   │   ├── catalog.rs   BrowserAction: navegação e abas
 │   │   ├── library.rs   LibraryAction: favoritos, histórico e downloads
 │   │   └── handler.rs   execução das ações de navegação sobre a aba ativa
@@ -140,15 +151,17 @@ src/
 │   ├── bookmarks.rs     favoritos na interface: estrela, painel e ações
 │   ├── downloads/       painel de downloads, linha com progresso e status
 │   ├── history.rs       registro das visitas e painel de histórico
+│   ├── menu.rs          menu principal
 │   ├── tabs/
 │   │   ├── mod.rs       Tabs: abrir, fechar, selecionar e pop-ups em nova aba
 │   │   ├── label.rs     rótulo da aba (título + botão fechar)
 │   │   ├── order.rs     navegação circular entre abas
+│   │   ├── weak.rs      referência fraca às abas para as closures
 │   │   └── watch.rs     observação de propriedades da aba ativa
 │   ├── sync.rs          aba ativa → endereço, título, spinner, voltar/avançar
 │   ├── title.rs         títulos da janela e das abas
 │   ├── toolbar.rs       widgets da toolbar
-│   └── window.rs        composição da janela
+│   └── window.rs        composição da janela conforme o modo de navegação
 └── utils/
     └── url.rs           resolução da entrada: URL explícita, domínio ou pesquisa
 ```
@@ -157,8 +170,10 @@ src/
   conhecem o WebView nem os favoritos. Botões usam `action-name` (`win.back`, `win.reload`...),
   a barra de endereço dispara `win.open-address` com o texto digitado e os
   atalhos apontam para as mesmas ações. Os enums que implementam `ActionSpec`
-  (`BrowserAction`, `LibraryAction`) são o contrato; cada funcionalidade
-  registra os próprios handlers.
+  (`BrowserAction`, `LibraryAction`, `AppAction`) são o contrato; cada
+  funcionalidade registra os próprios handlers.
+- **Modo de navegação:** `BrowsingMode` decide a sessão de rede de cada janela
+  (padrão ou efêmera) e se o histórico é gravado; o resto da interface é igual.
 - **Estado dos botões pelo próprio GAction:** Voltar/Avançar ficam insensíveis
   porque as ações correspondentes são desabilitadas quando não há histórico —
   o que também desativa os atalhos.
@@ -191,7 +206,11 @@ diretório (data, endereço e título), limitado às 5 000 visitas mais recentes
 
 ## Limitações conhecidas
 
-- Sem modo privado ou bloqueador de anúncios (fora do escopo desta versão).
+- Sem bloqueador de anúncios, extensões ou sincronização (fora do escopo desta
+  versão).
+- Cada janela privada tem a própria sessão efêmera; janelas privadas não
+  compartilham cookies entre si.
+- Arquivos baixados em janelas privadas ficam na pasta de Downloads.
 - A lista de downloads vale só para a sessão atual (não é persistida).
 - Domínios sem esquema sempre recebem `https://`; servidores locais só em HTTP
   (ex.: `localhost:3000`) precisam de `http://` explícito.

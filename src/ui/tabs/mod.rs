@@ -1,14 +1,16 @@
 mod label;
 mod order;
 mod watch;
+mod weak;
 
 pub use order::Direction;
 pub use watch::TabProperty;
+pub use weak::WeakTabs;
 
 use gtk::prelude::*;
 use gtk::{Button, Notebook, PackType, glib};
-use webkit6::WebView;
 use webkit6::prelude::*;
+use webkit6::{NetworkSession, WebView};
 
 use crate::browser::webview;
 use crate::ui::actions::{ActionSpec, BrowserAction};
@@ -17,47 +19,30 @@ use label::TabLabel;
 #[derive(Clone)]
 pub struct Tabs {
     notebook: Notebook,
-}
-
-pub struct WeakTabs {
-    notebook: glib::WeakRef<Notebook>,
-}
-
-impl glib::clone::Downgrade for Tabs {
-    type Weak = WeakTabs;
-
-    fn downgrade(&self) -> WeakTabs {
-        WeakTabs {
-            notebook: ObjectExt::downgrade(&self.notebook),
-        }
-    }
-}
-
-impl glib::clone::Upgrade for WeakTabs {
-    type Strong = Tabs;
-
-    fn upgrade(&self) -> Option<Tabs> {
-        self.notebook.upgrade().map(|notebook| Tabs { notebook })
-    }
+    session: NetworkSession,
 }
 
 impl Tabs {
-    pub fn new() -> Self {
+    pub fn new(session: NetworkSession) -> Self {
         let notebook = Notebook::builder()
             .scrollable(true)
             .show_border(false)
             .vexpand(true)
             .build();
         notebook.set_action_widget(&new_tab_button(), PackType::End);
-        Self { notebook }
+        Self { notebook, session }
     }
 
     pub fn widget(&self) -> &Notebook {
         &self.notebook
     }
 
+    pub fn session(&self) -> &NetworkSession {
+        &self.session
+    }
+
     pub fn open(&self, uri: &str) {
-        let webview = webview::create();
+        let webview = webview::create(&self.session);
         let label = TabLabel::new(&webview);
         label.connect_close(glib::clone!(
             #[weak(rename_to = tabs)]

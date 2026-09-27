@@ -1,8 +1,10 @@
+mod app;
 mod catalog;
 mod handler;
 mod library;
 mod spec;
 
+pub use app::AppAction;
 pub use catalog::BrowserAction;
 pub use handler::{BackForwardActions, install};
 pub use library::LibraryAction;
