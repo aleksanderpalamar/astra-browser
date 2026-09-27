@@ -1,12 +1,13 @@
 use gtk::glib;
 use webkit6::prelude::*;
-use webkit6::{NetworkError, NetworkSession, PolicyError, WebView};
+use webkit6::{NetworkError, NetworkSession, PolicyError, UserContentManager, WebView};
 
 use crate::browser::{downloads, media_support};
 
-pub fn create(session: &NetworkSession) -> WebView {
+pub fn create(session: &NetworkSession, content: &UserContentManager) -> WebView {
     let webview = WebView::builder()
         .network_session(session)
+        .user_content_manager(content)
         .hexpand(true)
         .vexpand(true)
         .build();

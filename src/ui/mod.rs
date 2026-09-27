@@ -1,4 +1,5 @@
 pub mod actions;
+pub mod adblock;
 pub mod address_bar;
 pub mod bookmarks;
 pub mod downloads;

@@ -1,3 +1,4 @@
+pub mod adblock;
 pub mod download_name;
 pub mod downloads;
 pub mod inspector;

@@ -1,10 +1,10 @@
 use std::cell::RefCell;
 use std::path::PathBuf;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::library::files;
 use crate::library::history::{History, Recording};
 use crate::library::visit::Visit;
+use crate::utils::clock::unix_now;
 
 pub struct HistoryStore {
     path: PathBuf,
@@ -33,7 +33,7 @@ impl HistoryStore {
 
     pub fn record(&self, uri: &str, title: &str) {
         let visit = Visit {
-            visited_at: now(),
+            visited_at: unix_now(),
             uri: uri.to_owned(),
             title: title.to_owned(),
         };
@@ -69,10 +69,4 @@ impl HistoryStore {
             );
         }
     }
-}
-
-fn now() -> u64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_or(0, |elapsed| elapsed.as_secs())
 }
