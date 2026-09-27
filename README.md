@@ -177,6 +177,7 @@ src/
 │   ├── media_support.rs consulta ao WebKit sobre os formatos suportados
 │   ├── mode.rs          BrowsingMode: sessão de rede e gravação de histórico
 │   ├── navigation.rs    abrir endereço digitado e ir para a página inicial
+│   ├── session.rs       cookies da sessão padrão persistidos em SQLite
 │   └── webview.rs       criação do WebView e registro de falhas reais
 ├── ui/
 │   ├── actions/
@@ -231,8 +232,10 @@ src/
   (`library/`) e o nome de destino dos downloads (`browser/download_name.rs`)
   são determinísticos e têm testes unitários.
 
-Cookies, cache e armazenamento de sites ficam na sessão padrão do WebKit, em
-`~/.local/share/astra-browser` e `~/.cache/astra-browser`. Os favoritos ficam em
+Os cookies da navegação normal são gravados em
+`~/.local/share/astra-browser/cookies.sqlite`, o que mantém os logins dos sites
+entre execuções; o armazenamento dos sites fica no mesmo diretório e o cache em
+`~/.cache/astra-browser`. Janelas privadas não gravam nada disso. Os favoritos ficam em
 `~/.local/share/astra-browser/bookmarks.tsv` (uma linha por favorito:
 endereço e título separados por tab) e o histórico em `history.tsv` no mesmo
 diretório (data, endereço e título), limitado às 5 000 visitas mais recentes.
