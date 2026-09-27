@@ -40,15 +40,20 @@ renderização feita pelo **WebKitGTK 6.0**. Toda a aplicação ao redor da engi
   do WebKit (cookies, cache e armazenamento só em memória, descartados ao
   fechar a janela) e não grava histórico.
 - Várias janelas: `Ctrl+N` abre uma nova janela normal; o menu principal reúne
-  nova aba, nova janela, nova janela privada, ferramentas do desenvolvedor e
-  sair.
+  nova aba, nova janela, nova janela privada, ferramentas do desenvolvedor,
+  configurações e sair.
 - Bloqueador de anúncios nativo: usa o motor de filtros de conteúdo do próprio
   WebKit (o mesmo formato dos bloqueadores do Safari) com a EasyList, bloqueando
   requisições de redes de anúncio e escondendo elementos de anúncio em todas as
   abas e janelas, inclusive as privadas. A lista é baixada na primeira execução,
-  compilada uma vez e atualizada semanalmente. "Bloquear anúncios" no menu
-  principal liga/desliga (a escolha é lembrada; recarregue a página para ver o
-  efeito).
+  compilada uma vez e atualizada semanalmente. No YouTube, onde os anúncios de
+  vídeo vêm do mesmo servidor que o conteúdo, um *scriptlet* remove os anúncios
+  do JSON do player (como o uBlock Origin faz) e regras próprias do Astra
+  escondem os cards patrocinados. O bloqueador é ligado/desligado em
+  Configurações (a escolha é lembrada; recarregue a página para ver o efeito).
+- Configurações: janela nativa aberta pelo menu principal ou `Ctrl+,`, com a
+  seção "Privacidade e segurança" (por enquanto, o interruptor "Bloquear
+  anúncios").
 - Microfone e câmera: quando um site pede acesso (ex.: ditado por voz), o
   Astra pergunta "*site* quer usar o seu microfone" com as opções Bloquear e
   Permitir; fechar o diálogo bloqueia. Outros pedidos de permissão continuam
@@ -157,6 +162,7 @@ cargo clippy -- -D warnings
 | `Ctrl+Shift+Y`                 | Abrir os downloads                           |
 | `Ctrl+N`                       | Nova janela                                  |
 | `Ctrl+Shift+P`                 | Nova janela privada                          |
+| `Ctrl+,`                       | Abrir as configurações                       |
 | `F12` / `Ctrl+Shift+I`         | Abrir/fechar as ferramentas do desenvolvedor |
 | `F10`                          | Abrir o menu principal                       |
 | `Ctrl+Q`                       | Fechar o navegador                           |
@@ -193,7 +199,10 @@ src/
 │   │   ├── mod.rs       AdBlocker: carrega do cache, baixa, compila e aplica
 │   │   ├── filters.rs   fonte da lista e regra de atualização semanal
 │   │   ├── download.rs  download da lista (libsoup)
-│   │   └── sanitize.rs  correção de padrões defeituosos da lista
+│   │   ├── sanitize.rs  correção de padrões defeituosos da lista
+│   │   ├── youtube.rs   injeção do scriptlet de anúncios do player do YouTube
+│   │   ├── youtube.js   scriptlet: remove adPlacements/adSlots/playerAds
+│   │   └── extra_rules.json regras cosméticas próprias (cards patrocinados do YouTube)
 │   ├── downloads.rs     downloads: política de resposta e destino do arquivo
 │   ├── download_name.rs nome de destino único e seguro na pasta de downloads
 │   ├── inspector.rs     Web Inspector: habilitar e abrir/fechar na aba ativa
@@ -204,10 +213,10 @@ src/
 │   ├── session.rs       cookies da sessão padrão persistidos em SQLite
 │   └── webview.rs       criação do WebView e registro de falhas reais
 ├── ui/
-│   ├── adblock.rs       opção "Bloquear anúncios" (ação com estado persistido)
+│   ├── adblock.rs       ação "Bloquear anúncios" com estado persistido
 │   ├── actions/
 │   │   ├── spec.rs      ActionSpec: contrato comum (nome, escopo, atalhos)
-│   │   ├── app.rs       AppAction: nova janela, janela privada e sair
+│   │   ├── app.rs       AppAction: janelas, bloqueador, configurações e sair
 │   │   ├── catalog.rs   BrowserAction: navegação e abas
 │   │   ├── library.rs   LibraryAction: favoritos, histórico e downloads
 │   │   └── handler.rs   execução das ações de navegação sobre a aba ativa
@@ -220,6 +229,7 @@ src/
 │   ├── history.rs       registro das visitas e painel de histórico
 │   ├── menu.rs          menu principal
 │   ├── permissions/     pergunta de permissão para microfone e câmera
+│   ├── preferences.rs   janela de Configurações
 │   ├── tabs/
 │   │   ├── mod.rs       Tabs: abrir, fechar, selecionar e pop-ups em nova aba
 │   │   ├── label.rs     rótulo da aba (título + botão fechar)
@@ -286,6 +296,9 @@ diretório (data, endereço e título), limitado às 5 000 visitas mais recentes
   atualizada pela fonte desde maio de 2025; ela ainda cobre as principais redes
   de anúncio, mas anúncios novos podem passar. O bloqueador não tem exceções
   por site nem contador de itens bloqueados.
+- O bloqueio no YouTube depende da estrutura atual do site; mudanças do YouTube
+  (ou seus avisos contra bloqueadores) podem exigir ajustes no scriptlet e nas
+  regras extras.
 - WebRTC depende do WebKitGTK do sistema: o Astra liga a opção, mas o pacote
   `webkitgtk-6.0` do Arch é compilado sem WebRTC (`RTCPeerConnection` não
   existe). Chamadas de vídeo e o modo de conversa por voz do ChatGPT não
