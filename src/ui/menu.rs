@@ -13,8 +13,8 @@ pub fn button() -> MenuButton {
         "Ferramentas do desenvolvedor",
         BrowserAction::ToggleInspector,
     );
-    append(&tools, "Bloquear anúncios", AppAction::ToggleAdBlock);
     let application = gio::Menu::new();
+    append(&application, "Configurações", AppAction::ShowPreferences);
     append(&application, "Sair", AppAction::Quit);
     let menu = gio::Menu::new();
     menu.append_section(None, &windows);

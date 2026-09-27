@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use gtk::prelude::*;
-use gtk::{Application, glib};
+use gtk::{Application, ApplicationWindow, glib};
 use webkit6::{NetworkSession, UserContentManager};
 
 use crate::browser::adblock::AdBlocker;
@@ -9,7 +9,7 @@ use crate::browser::mode::BrowsingMode;
 use crate::browser::session;
 use crate::library::{Library, files};
 use crate::ui::actions::{self, AppAction, BrowserAction, LibraryAction, register_accels};
-use crate::ui::{adblock, window};
+use crate::ui::{adblock, preferences, window};
 
 const APP_ID: &str = "io.github.aleksanderpalamar.AstraBrowser";
 const FILTERS_DIRECTORY: &str = "content-filters";
@@ -36,7 +36,11 @@ pub fn run() -> glib::ExitCode {
 }
 
 fn activate(app: &Application, library: &Library, content: &UserContentManager) {
-    if let Some(window) = app.active_window() {
+    if let Some(window) = app
+        .windows()
+        .into_iter()
+        .find(|window| window.is::<ApplicationWindow>())
+    {
         window.present();
         return;
     }
@@ -69,6 +73,15 @@ fn install_app_actions(app: &Application, library: &Library, content: &UserConte
             ),
         );
     }
+    actions::register(
+        app,
+        AppAction::ShowPreferences,
+        glib::clone!(
+            #[weak]
+            app,
+            move |_| preferences::show(&app)
+        ),
+    );
     actions::register(
         app,
         AppAction::Quit,
