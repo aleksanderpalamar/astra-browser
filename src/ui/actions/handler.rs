@@ -3,6 +3,7 @@ use webkit6::WebView;
 use webkit6::prelude::*;
 
 use super::{BrowserAction, register};
+use crate::browser::inspector;
 use crate::browser::navigation::{self, HOME_URI};
 use crate::ui::tabs::{Direction, Tabs};
 use crate::ui::toolbar::Toolbar;
@@ -38,6 +39,7 @@ impl Handler {
             BrowserAction::CloseTab => self.tabs.close_current(),
             BrowserAction::NextTab => self.tabs.select(Direction::Next),
             BrowserAction::PreviousTab => self.tabs.select(Direction::Previous),
+            BrowserAction::ToggleInspector => self.with_current(inspector::toggle),
         }
     }
 

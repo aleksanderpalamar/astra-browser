@@ -40,7 +40,12 @@ renderização feita pelo **WebKitGTK 6.0**. Toda a aplicação ao redor da engi
   do WebKit (cookies, cache e armazenamento só em memória, descartados ao
   fechar a janela) e não grava histórico.
 - Várias janelas: `Ctrl+N` abre uma nova janela normal; o menu principal reúne
-  nova aba, nova janela, nova janela privada e sair.
+  nova aba, nova janela, nova janela privada, ferramentas do desenvolvedor e
+  sair.
+- Ferramentas do desenvolvedor: `F12` (ou `Ctrl+Shift+I`) abre e fecha o Web
+  Inspector do WebKit na aba ativa — Elements, Console, Sources, Network,
+  Storage e demais painéis. O menu de contexto da página também passa a
+  oferecer "Inspecionar elemento".
 - Links que pedem nova janela (`target="_blank"`) abrem em uma nova aba;
   pop-ups abertos sem interação do usuário são bloqueados.
 - Falhas de carregamento exibem a página de erro do WebKit e são registradas no
@@ -124,26 +129,27 @@ cargo clippy -- -D warnings
 
 ## Atalhos de teclado
 
-| Atalho                         | Ação                                   |
-| ------------------------------ | -------------------------------------- |
-| `Ctrl+L`                       | Focar e selecionar a barra de endereço |
-| `Ctrl+R` / `F5`                | Recarregar                             |
-| `Alt+←`                        | Voltar                                 |
-| `Alt+→`                        | Avançar                                |
-| `Alt+Home`                     | Página inicial                         |
-| `Ctrl+T`                       | Nova aba                               |
-| `Ctrl+W`                       | Fechar aba                             |
-| `Ctrl+Tab` / `Ctrl+PgDn`       | Próxima aba                            |
-| `Ctrl+Shift+Tab` / `Ctrl+PgUp` | Aba anterior                           |
-| `Ctrl+D`                       | Adicionar/remover dos favoritos        |
-| `Ctrl+Shift+O`                 | Abrir a lista de favoritos             |
-| `Ctrl+H`                       | Abrir o histórico                      |
-| `Ctrl+Shift+Y`                 | Abrir os downloads                     |
-| `Ctrl+N`                       | Nova janela                            |
-| `Ctrl+Shift+P`                 | Nova janela privada                    |
-| `F10`                          | Abrir o menu principal                 |
-| `Ctrl+Q`                       | Fechar o navegador                     |
-| `Enter` (no endereço)          | Abrir URL ou pesquisar                 |
+| Atalho                         | Ação                                         |
+| ------------------------------ | -------------------------------------------- |
+| `Ctrl+L`                       | Focar e selecionar a barra de endereço       |
+| `Ctrl+R` / `F5`                | Recarregar                                   |
+| `Alt+←`                        | Voltar                                       |
+| `Alt+→`                        | Avançar                                      |
+| `Alt+Home`                     | Página inicial                               |
+| `Ctrl+T`                       | Nova aba                                     |
+| `Ctrl+W`                       | Fechar aba                                   |
+| `Ctrl+Tab` / `Ctrl+PgDn`       | Próxima aba                                  |
+| `Ctrl+Shift+Tab` / `Ctrl+PgUp` | Aba anterior                                 |
+| `Ctrl+D`                       | Adicionar/remover dos favoritos              |
+| `Ctrl+Shift+O`                 | Abrir a lista de favoritos                   |
+| `Ctrl+H`                       | Abrir o histórico                            |
+| `Ctrl+Shift+Y`                 | Abrir os downloads                           |
+| `Ctrl+N`                       | Nova janela                                  |
+| `Ctrl+Shift+P`                 | Nova janela privada                          |
+| `F12` / `Ctrl+Shift+I`         | Abrir/fechar as ferramentas do desenvolvedor |
+| `F10`                          | Abrir o menu principal                       |
+| `Ctrl+Q`                       | Fechar o navegador                           |
+| `Enter` (no endereço)          | Abrir URL ou pesquisar                       |
 
 Os atalhos são registrados como *accelerators* do `GtkApplication`
 (`set_accels_for_action`), a convenção do GTK4 para atalhos de aplicação.
@@ -173,6 +179,7 @@ src/
 ├── browser/
 │   ├── downloads.rs     downloads: política de resposta e destino do arquivo
 │   ├── download_name.rs nome de destino único e seguro na pasta de downloads
+│   ├── inspector.rs     Web Inspector: habilitar e abrir/fechar na aba ativa
 │   ├── media_formats.rs formatos de mídia essenciais e mensagem de aviso
 │   ├── media_support.rs consulta ao WebKit sobre os formatos suportados
 │   ├── mode.rs          BrowsingMode: sessão de rede e gravação de histórico

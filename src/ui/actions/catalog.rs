@@ -14,10 +14,11 @@ pub enum BrowserAction {
     CloseTab,
     NextTab,
     PreviousTab,
+    ToggleInspector,
 }
 
 impl BrowserAction {
-    pub const ALL: [Self; 10] = [
+    pub const ALL: [Self; 11] = [
         Self::Back,
         Self::Forward,
         Self::Reload,
@@ -28,6 +29,7 @@ impl BrowserAction {
         Self::CloseTab,
         Self::NextTab,
         Self::PreviousTab,
+        Self::ToggleInspector,
     ];
 
     pub(super) fn depends_on_history(self) -> bool {
@@ -50,6 +52,7 @@ impl ActionSpec for BrowserAction {
             Self::CloseTab => "close-tab",
             Self::NextTab => "next-tab",
             Self::PreviousTab => "previous-tab",
+            Self::ToggleInspector => "toggle-inspector",
         }
     }
 
@@ -65,6 +68,7 @@ impl ActionSpec for BrowserAction {
             Self::CloseTab => &["<Control>w"],
             Self::NextTab => &["<Control>Tab", "<Control>Page_Down"],
             Self::PreviousTab => &["<Control><Shift>Tab", "<Control>Page_Up"],
+            Self::ToggleInspector => &["F12", "<Control><Shift>i"],
         }
     }
 
@@ -120,6 +124,20 @@ mod tests {
             BrowserAction::PreviousTab
                 .accels()
                 .contains(&"<Control>Page_Up")
+        );
+    }
+
+    #[test]
+    fn inspector_uses_the_usual_browser_shortcuts() {
+        assert_eq!(
+            BrowserAction::ToggleInspector.detailed_name(),
+            "win.toggle-inspector"
+        );
+        assert!(BrowserAction::ToggleInspector.accels().contains(&"F12"));
+        assert!(
+            BrowserAction::ToggleInspector
+                .accels()
+                .contains(&"<Control><Shift>i")
         );
     }
 
