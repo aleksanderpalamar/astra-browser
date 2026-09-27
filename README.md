@@ -66,13 +66,13 @@ renderização feita pelo **WebKitGTK 6.0**. Toda a aplicação ao redor da engi
 - GTK ≥ 4.10
 - WebKitGTK 6.0
 - Plugins do GStreamer para áudio e vídeo (`gst-plugins-good`, `gst-plugins-bad`,
-  `gst-libav`) e, para gravação de áudio em MP4 pelos sites, `gst-plugin-isobmff`
+  `gst-libav`)
 - `pkgconf` e toolchain C (usados pelas crates `-sys` para localizar as bibliotecas)
 
 ## Instalação das dependências no Arch Linux
 
 ```bash
-sudo pacman -S --needed webkitgtk-6.0 gtk4 gst-plugins-good gst-plugins-bad gst-libav gst-plugin-isobmff base-devel rustup
+sudo pacman -S --needed webkitgtk-6.0 gtk4 gst-plugins-good gst-plugins-bad gst-libav base-devel rustup
 rustup default stable
 ```
 
@@ -268,6 +268,10 @@ diretório (data, endereço e título), limitado às 5 000 visitas mais recentes
   `webkitgtk-6.0` do Arch é compilado sem WebRTC (`RTCPeerConnection` não
   existe). Chamadas de vídeo e o modo de conversa por voz do ChatGPT não
   funcionam; o microfone para ditado e gravação funciona.
+- Gravação de áudio pelos sites (`MediaRecorder`): WebM/Opus funciona, mas MP4
+  — o formato padrão do WebKitGTK quando o site não escolhe um — gera arquivos
+  vazios com WebKitGTK 2.52 e GStreamer 1.28 (o `encodebin` não encontra um
+  perfil compatível), mesmo com o `gst-plugin-isobmff` instalado.
 - A permissão de microfone/câmera não é lembrada: cada pedido do site abre a
   pergunta de novo.
 - Ainda não pode ser definido como navegador padrão: o atalho não declara tipos
