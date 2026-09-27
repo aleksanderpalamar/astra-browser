@@ -22,6 +22,9 @@ renderização feita pelo **WebKitGTK 6.0**. Toda a aplicação ao redor da engi
   pop-ups abertos sem interação do usuário são bloqueados.
 - Falhas de carregamento exibem a página de erro do WebKit e são registradas no
   `stderr`, sem derrubar a aplicação.
+- Na primeira página carregada, o navegador pergunta ao WebKit se consegue
+  reproduzir os formatos de mídia essenciais da web (VP9, H.264, Opus, AAC) e
+  avisa no `stderr` quais plugins do GStreamer instalar se faltar algum.
 - Página inicial: `https://duckduckgo.com`.
 
 ## Requisitos
@@ -30,20 +33,21 @@ renderização feita pelo **WebKitGTK 6.0**. Toda a aplicação ao redor da engi
 - Rust stable (edition 2024, Rust ≥ 1.85)
 - GTK ≥ 4.10
 - WebKitGTK 6.0
+- Plugins do GStreamer para áudio e vídeo (`gst-plugins-good`, `gst-plugins-bad`,
+  `gst-libav`)
 - `pkgconf` e toolchain C (usados pelas crates `-sys` para localizar as bibliotecas)
 
 ## Instalação das dependências no Arch Linux
 
 ```bash
-sudo pacman -S --needed webkitgtk-6.0 gtk4 base-devel rustup
+sudo pacman -S --needed webkitgtk-6.0 gtk4 gst-plugins-good gst-plugins-bad gst-libav base-devel rustup
 rustup default stable
 ```
 
-Opcional, para reproduzir áudio e vídeo em mais formatos:
-
-```bash
-sudo pacman -S --needed gst-plugins-good gst-plugins-bad gst-libav
-```
+O WebKitGTK decodifica áudio e vídeo pelo GStreamer, e o pacote `webkitgtk-6.0`
+traz esses plugins apenas como dependências opcionais. Sem o `gst-plugins-bad`
+(parser Opus, AAC, H.264) e o `gst-libav`, o YouTube mostra
+"Não é possível tocar este vídeo no seu navegador".
 
 ## Build
 
@@ -88,6 +92,8 @@ src/
 ├── main.rs              ponto de entrada
 ├── app.rs               ciclo de vida do GtkApplication, ação quit e atalhos
 ├── browser/
+│   ├── media_formats.rs formatos de mídia essenciais e mensagem de aviso
+│   ├── media_support.rs consulta ao WebKit sobre os formatos suportados
 │   ├── navigation.rs    Navigator: comandos de navegação sobre o WebView
 │   └── webview.rs       criação do WebView, falhas e pedidos de nova janela
 ├── ui/

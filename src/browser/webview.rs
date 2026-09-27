@@ -1,10 +1,13 @@
 use webkit6::prelude::*;
 use webkit6::{NetworkError, WebView};
 
+use crate::browser::media_support;
+
 pub fn create() -> WebView {
     let webview = WebView::builder().hexpand(true).vexpand(true).build();
     report_failures(&webview);
     open_new_windows_in_place(&webview);
+    media_support::report_on_first_load(&webview);
     webview
 }
 
