@@ -4,11 +4,17 @@ use super::ActionSpec;
 pub enum AppAction {
     NewWindow,
     NewPrivateWindow,
+    ToggleAdBlock,
     Quit,
 }
 
 impl AppAction {
-    pub const ALL: [Self; 3] = [Self::NewWindow, Self::NewPrivateWindow, Self::Quit];
+    pub const ALL: [Self; 4] = [
+        Self::NewWindow,
+        Self::NewPrivateWindow,
+        Self::ToggleAdBlock,
+        Self::Quit,
+    ];
 }
 
 impl ActionSpec for AppAction {
@@ -18,6 +24,7 @@ impl ActionSpec for AppAction {
         match self {
             Self::NewWindow => "new-window",
             Self::NewPrivateWindow => "new-private-window",
+            Self::ToggleAdBlock => "toggle-adblock",
             Self::Quit => "quit",
         }
     }
@@ -26,6 +33,7 @@ impl ActionSpec for AppAction {
         match self {
             Self::NewWindow => &["<Control>n"],
             Self::NewPrivateWindow => &["<Control><Shift>p"],
+            Self::ToggleAdBlock => &[],
             Self::Quit => &["<Control>q"],
         }
     }

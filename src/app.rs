@@ -1,38 +1,46 @@
+use std::rc::Rc;
+
 use gtk::prelude::*;
 use gtk::{Application, glib};
-use webkit6::NetworkSession;
+use webkit6::{NetworkSession, UserContentManager};
 
+use crate::browser::adblock::AdBlocker;
 use crate::browser::mode::BrowsingMode;
 use crate::browser::session;
-use crate::library::Library;
+use crate::library::{Library, files};
 use crate::ui::actions::{self, AppAction, BrowserAction, LibraryAction, register_accels};
-use crate::ui::window;
+use crate::ui::{adblock, window};
 
 const APP_ID: &str = "io.github.aleksanderpalamar.AstraBrowser";
+const FILTERS_DIRECTORY: &str = "content-filters";
 
 pub fn run() -> glib::ExitCode {
     let app = Application::builder().application_id(APP_ID).build();
     let library = Library::open();
+    let adblocker = AdBlocker::new(&files::data_path(FILTERS_DIRECTORY));
     app.connect_startup(glib::clone!(
         #[strong]
         library,
+        #[strong]
+        adblocker,
         move |app| {
             gtk::Window::set_default_icon_name(APP_ID);
             persist_default_session_cookies();
-            install_app_actions(app, &library);
+            adblock::install(app, &adblocker, Rc::clone(&library.preferences));
+            install_app_actions(app, &library, adblocker.content_manager());
             register_accelerators(app);
         }
     ));
-    app.connect_activate(move |app| activate(app, &library));
+    app.connect_activate(move |app| activate(app, &library, adblocker.content_manager()));
     app.run()
 }
 
-fn activate(app: &Application, library: &Library) {
+fn activate(app: &Application, library: &Library, content: &UserContentManager) {
     if let Some(window) = app.active_window() {
         window.present();
         return;
     }
-    window::build(app, library, BrowsingMode::Normal);
+    window::build(app, library, content, BrowsingMode::Normal);
 }
 
 fn persist_default_session_cookies() {
@@ -42,7 +50,7 @@ fn persist_default_session_cookies() {
     }
 }
 
-fn install_app_actions(app: &Application, library: &Library) {
+fn install_app_actions(app: &Application, library: &Library, content: &UserContentManager) {
     for (action, mode) in [
         (AppAction::NewWindow, BrowsingMode::Normal),
         (AppAction::NewPrivateWindow, BrowsingMode::Private),
@@ -55,7 +63,9 @@ fn install_app_actions(app: &Application, library: &Library) {
                 app,
                 #[strong]
                 library,
-                move |_| window::build(&app, &library, mode)
+                #[strong]
+                content,
+                move |_| window::build(&app, &library, &content, mode)
             ),
         );
     }

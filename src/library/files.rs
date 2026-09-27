@@ -10,6 +10,10 @@ pub fn data_path(file_name: &str) -> PathBuf {
     glib::user_data_dir().join(APP_DIRECTORY).join(file_name)
 }
 
+pub fn config_path(file_name: &str) -> PathBuf {
+    glib::user_config_dir().join(APP_DIRECTORY).join(file_name)
+}
+
 pub fn read_or_empty(path: &Path) -> io::Result<String> {
     match fs::read_to_string(path) {
         Err(error) if error.kind() == ErrorKind::NotFound => Ok(String::new()),

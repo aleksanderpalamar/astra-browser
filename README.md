@@ -42,6 +42,13 @@ renderização feita pelo **WebKitGTK 6.0**. Toda a aplicação ao redor da engi
 - Várias janelas: `Ctrl+N` abre uma nova janela normal; o menu principal reúne
   nova aba, nova janela, nova janela privada, ferramentas do desenvolvedor e
   sair.
+- Bloqueador de anúncios nativo: usa o motor de filtros de conteúdo do próprio
+  WebKit (o mesmo formato dos bloqueadores do Safari) com a EasyList, bloqueando
+  requisições de redes de anúncio e escondendo elementos de anúncio em todas as
+  abas e janelas, inclusive as privadas. A lista é baixada na primeira execução,
+  compilada uma vez e atualizada semanalmente. "Bloquear anúncios" no menu
+  principal liga/desliga (a escolha é lembrada; recarregue a página para ver o
+  efeito).
 - Microfone e câmera: quando um site pede acesso (ex.: ditado por voz), o
   Astra pergunta "*site* quer usar o seu microfone" com as opções Bloquear e
   Permitir; fechar o diálogo bloqueia. Outros pedidos de permissão continuam
@@ -177,10 +184,16 @@ src/
 │   ├── bookmark_store.rs favoritos persistidos em disco
 │   ├── history/         histórico: registro, busca e limite de visitas
 │   ├── history_store.rs histórico persistido em disco (somente acréscimo)
+│   ├── preferences.rs   preferências do usuário (bloqueador ligado/desligado)
 │   ├── visit.rs         visita: formato da linha e páginas registráveis
 │   ├── files.rs         caminhos de dados, gravação atômica e acréscimo
 │   └── tsv.rs           codificação das linhas dos arquivos de dados
 ├── browser/
+│   ├── adblock/
+│   │   ├── mod.rs       AdBlocker: carrega do cache, baixa, compila e aplica
+│   │   ├── filters.rs   fonte da lista e regra de atualização semanal
+│   │   ├── download.rs  download da lista (libsoup)
+│   │   └── sanitize.rs  correção de padrões defeituosos da lista
 │   ├── downloads.rs     downloads: política de resposta e destino do arquivo
 │   ├── download_name.rs nome de destino único e seguro na pasta de downloads
 │   ├── inspector.rs     Web Inspector: habilitar e abrir/fechar na aba ativa
@@ -191,6 +204,7 @@ src/
 │   ├── session.rs       cookies da sessão padrão persistidos em SQLite
 │   └── webview.rs       criação do WebView e registro de falhas reais
 ├── ui/
+│   ├── adblock.rs       opção "Bloquear anúncios" (ação com estado persistido)
 │   ├── actions/
 │   │   ├── spec.rs      ActionSpec: contrato comum (nome, escopo, atalhos)
 │   │   ├── app.rs       AppAction: nova janela, janela privada e sair
@@ -217,6 +231,7 @@ src/
 │   ├── toolbar.rs       widgets da toolbar
 │   └── window.rs        composição da janela conforme o modo de navegação
 └── utils/
+    ├── clock.rs         horário atual em segundos Unix
     └── url.rs           resolução da entrada: URL explícita, domínio ou pesquisa
 ```
 
@@ -247,7 +262,9 @@ src/
 Os cookies da navegação normal são gravados em
 `~/.local/share/astra-browser/cookies.sqlite`, o que mantém os logins dos sites
 entre execuções; o armazenamento dos sites fica no mesmo diretório e o cache em
-`~/.cache/astra-browser`. Janelas privadas não gravam nada disso. Os favoritos ficam em
+`~/.cache/astra-browser`. Janelas privadas não gravam nada disso. A lista de
+bloqueio compilada fica em `~/.local/share/astra-browser/content-filters/` e as
+preferências em `~/.config/astra-browser/preferences.ini`. Os favoritos ficam em
 `~/.local/share/astra-browser/bookmarks.tsv` (uma linha por favorito:
 endereço e título separados por tab) e o histórico em `history.tsv` no mesmo
 diretório (data, endereço e título), limitado às 5 000 visitas mais recentes.
@@ -259,11 +276,16 @@ diretório (data, endereço e título), limitado às 5 000 visitas mais recentes
 - [WebKitGTK 6.0](https://webkitgtk.org/) via [`webkit6`](https://crates.io/crates/webkit6) 0.6
 - [`url`](https://crates.io/crates/url) 2.5 — parsing de URL (padrão WHATWG)
 - [`percent-encoding`](https://crates.io/crates/percent-encoding) 2.3 — codificação da pesquisa
+- [`serde_json`](https://crates.io/crates/serde_json) 1.0 — correção da lista de bloqueio antes de compilar
+- [EasyList](https://easylist.to/) — lista de filtros de anúncios (GPLv3 / CC BY-SA 3.0), baixada em tempo de execução
 
 ## Limitações conhecidas
 
-- Sem bloqueador de anúncios, extensões ou sincronização (fora do escopo desta
-  versão).
+- Sem extensões ou sincronização (fora do escopo desta versão).
+- A EasyList no formato do WebKit (`easylist_min_content_blocker.json`) não é
+  atualizada pela fonte desde maio de 2025; ela ainda cobre as principais redes
+  de anúncio, mas anúncios novos podem passar. O bloqueador não tem exceções
+  por site nem contador de itens bloqueados.
 - WebRTC depende do WebKitGTK do sistema: o Astra liga a opção, mas o pacote
   `webkitgtk-6.0` do Arch é compilado sem WebRTC (`RTCPeerConnection` não
   existe). Chamadas de vídeo e o modo de conversa por voz do ChatGPT não
