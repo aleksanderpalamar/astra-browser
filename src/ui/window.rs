@@ -9,7 +9,7 @@ use crate::library::Library;
 use crate::ui::tabs::Tabs;
 use crate::ui::title::window_title;
 use crate::ui::toolbar::Toolbar;
-use crate::ui::{actions, bookmarks, downloads, history, menu, sync};
+use crate::ui::{actions, bookmarks, downloads, history, menu, permissions, sync};
 
 const DEFAULT_WIDTH: i32 = 1280;
 const DEFAULT_HEIGHT: i32 = 800;
@@ -49,6 +49,7 @@ fn install_features(
     bookmarks::install(window, tabs, toolbar, Rc::clone(&library.bookmarks));
     history::install(window, tabs, toolbar, Rc::clone(&library.history), mode);
     downloads::install(window, toolbar, tabs.session());
+    permissions::install(tabs);
     if mode == BrowsingMode::Private {
         toolbar.add_end(&private_badge());
     }

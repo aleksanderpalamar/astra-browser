@@ -5,6 +5,7 @@ pub mod downloads;
 pub mod history;
 pub mod library;
 pub mod menu;
+pub mod permissions;
 pub mod sync;
 pub mod tabs;
 pub mod title;
