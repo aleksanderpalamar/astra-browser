@@ -42,6 +42,10 @@ renderização feita pelo **WebKitGTK 6.0**. Toda a aplicação ao redor da engi
 - Várias janelas: `Ctrl+N` abre uma nova janela normal; o menu principal reúne
   nova aba, nova janela, nova janela privada, ferramentas do desenvolvedor e
   sair.
+- Microfone e câmera: quando um site pede acesso (ex.: ditado por voz), o
+  Astra pergunta "*site* quer usar o seu microfone" com as opções Bloquear e
+  Permitir; fechar o diálogo bloqueia. Outros pedidos de permissão continuam
+  negados.
 - Ferramentas do desenvolvedor: `F12` (ou `Ctrl+Shift+I`) abre e fecha o Web
   Inspector do WebKit na aba ativa — Elements, Console, Sources, Network,
   Storage e demais painéis. O menu de contexto da página também passa a
@@ -62,13 +66,13 @@ renderização feita pelo **WebKitGTK 6.0**. Toda a aplicação ao redor da engi
 - GTK ≥ 4.10
 - WebKitGTK 6.0
 - Plugins do GStreamer para áudio e vídeo (`gst-plugins-good`, `gst-plugins-bad`,
-  `gst-libav`)
+  `gst-libav`) e, para gravação de áudio em MP4 pelos sites, `gst-plugin-isobmff`
 - `pkgconf` e toolchain C (usados pelas crates `-sys` para localizar as bibliotecas)
 
 ## Instalação das dependências no Arch Linux
 
 ```bash
-sudo pacman -S --needed webkitgtk-6.0 gtk4 gst-plugins-good gst-plugins-bad gst-libav base-devel rustup
+sudo pacman -S --needed webkitgtk-6.0 gtk4 gst-plugins-good gst-plugins-bad gst-libav gst-plugin-isobmff base-devel rustup
 rustup default stable
 ```
 
@@ -201,6 +205,7 @@ src/
 │   ├── downloads/       painel de downloads, linha com progresso e status
 │   ├── history.rs       registro das visitas e painel de histórico
 │   ├── menu.rs          menu principal
+│   ├── permissions/     pergunta de permissão para microfone e câmera
 │   ├── tabs/
 │   │   ├── mod.rs       Tabs: abrir, fechar, selecionar e pop-ups em nova aba
 │   │   ├── label.rs     rótulo da aba (título + botão fechar)
@@ -259,6 +264,12 @@ diretório (data, endereço e título), limitado às 5 000 visitas mais recentes
 
 - Sem bloqueador de anúncios, extensões ou sincronização (fora do escopo desta
   versão).
+- WebRTC depende do WebKitGTK do sistema: o Astra liga a opção, mas o pacote
+  `webkitgtk-6.0` do Arch é compilado sem WebRTC (`RTCPeerConnection` não
+  existe). Chamadas de vídeo e o modo de conversa por voz do ChatGPT não
+  funcionam; o microfone para ditado e gravação funciona.
+- A permissão de microfone/câmera não é lembrada: cada pedido do site abre a
+  pergunta de novo.
 - Ainda não pode ser definido como navegador padrão: o atalho não declara tipos
   MIME porque o app não abre URLs recebidas pela linha de comando.
 - Cada janela privada tem a própria sessão efêmera; janelas privadas não
