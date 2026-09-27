@@ -1,5 +1,6 @@
 use std::rc::Rc;
 
+use gtk::glib;
 use gtk::prelude::*;
 use webkit6::WebView;
 
@@ -30,18 +31,27 @@ impl Tabs {
     ) {
         let callback = Rc::new(callback);
         let on_change = Rc::clone(&callback);
-        let tabs = self.clone();
-        self.connect_tab_added(move |webview| {
-            for property in properties {
-                let tabs = tabs.clone();
-                let on_change = Rc::clone(&on_change);
-                webview.connect_notify_local(Some(property.name()), move |webview, _| {
-                    if tabs.is_current(webview) {
-                        on_change(webview);
-                    }
-                });
+        self.connect_tab_added(glib::clone!(
+            #[weak(rename_to = tabs)]
+            self,
+            move |webview| {
+                for property in properties {
+                    let on_change = Rc::clone(&on_change);
+                    webview.connect_notify_local(
+                        Some(property.name()),
+                        glib::clone!(
+                            #[weak]
+                            tabs,
+                            move |webview, _| {
+                                if tabs.is_current(webview) {
+                                    on_change(webview);
+                                }
+                            }
+                        ),
+                    );
+                }
             }
-        });
+        ));
         self.connect_tab_selected(move |webview| callback(webview));
     }
 }

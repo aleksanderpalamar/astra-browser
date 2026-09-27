@@ -20,7 +20,7 @@ pub fn build(app: &Application) {
         .default_height(DEFAULT_HEIGHT)
         .child(&layout(&toolbar, &tabs))
         .build();
-    let history = actions::install(&window, tabs.clone(), toolbar.clone());
+    let history = actions::install(&window, &tabs, &toolbar);
     sync::bind(&tabs, &window, &toolbar, history);
     release_tabs_on_close(&window, tabs.clone());
     tabs.open(HOME_URI);

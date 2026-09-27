@@ -8,14 +8,22 @@ use crate::ui::title::window_title;
 use crate::ui::toolbar::Toolbar;
 
 pub fn bind(tabs: &Tabs, window: &ApplicationWindow, toolbar: &Toolbar, history: HistoryActions) {
-    let address = toolbar.clone();
-    tabs.watch_current(&[TabProperty::Uri], move |webview| {
-        address.show_address(webview.uri().as_deref().unwrap_or_default());
-    });
-    let spinner = toolbar.clone();
-    tabs.watch_current(&[TabProperty::Loading], move |webview| {
-        spinner.set_loading(webview.is_loading());
-    });
+    tabs.watch_current(
+        &[TabProperty::Uri],
+        glib::clone!(
+            #[weak]
+            toolbar,
+            move |webview| toolbar.show_address(webview.uri().as_deref().unwrap_or_default())
+        ),
+    );
+    tabs.watch_current(
+        &[TabProperty::Loading],
+        glib::clone!(
+            #[weak]
+            toolbar,
+            move |webview| toolbar.set_loading(webview.is_loading())
+        ),
+    );
     tabs.watch_current(
         &[TabProperty::Title],
         glib::clone!(

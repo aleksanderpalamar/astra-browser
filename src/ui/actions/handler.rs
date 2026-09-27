@@ -21,7 +21,6 @@ impl HistoryActions {
     }
 }
 
-#[derive(Clone)]
 struct Handler {
     tabs: Tabs,
     toolbar: Toolbar,
@@ -61,17 +60,16 @@ impl Handler {
     }
 }
 
-pub fn install(window: &ApplicationWindow, tabs: Tabs, toolbar: Toolbar) -> HistoryActions {
-    let handler = Handler { tabs, toolbar };
+pub fn install(window: &ApplicationWindow, tabs: &Tabs, toolbar: &Toolbar) -> HistoryActions {
     let history = HistoryActions {
-        back: register(window, BrowserAction::Back, &handler),
-        forward: register(window, BrowserAction::Forward, &handler),
+        back: register(window, BrowserAction::Back, tabs, toolbar),
+        forward: register(window, BrowserAction::Forward, tabs, toolbar),
     };
     BrowserAction::ALL
         .into_iter()
         .filter(|action| !action.depends_on_history())
         .for_each(|action| {
-            register(window, action, &handler);
+            register(window, action, tabs, toolbar);
         });
     history
 }
@@ -79,11 +77,17 @@ pub fn install(window: &ApplicationWindow, tabs: Tabs, toolbar: Toolbar) -> Hist
 fn register(
     window: &ApplicationWindow,
     action: BrowserAction,
-    handler: &Handler,
+    tabs: &Tabs,
+    toolbar: &Toolbar,
 ) -> gio::SimpleAction {
     let simple = gio::SimpleAction::new(action.name(), action.parameter_type());
-    let handler = handler.clone();
-    simple.connect_activate(move |_, parameter| handler.perform(action, parameter));
+    simple.connect_activate(glib::clone!(
+        #[weak]
+        tabs,
+        #[weak]
+        toolbar,
+        move |_, parameter| Handler { tabs, toolbar }.perform(action, parameter)
+    ));
     window.add_action(&simple);
     simple
 }

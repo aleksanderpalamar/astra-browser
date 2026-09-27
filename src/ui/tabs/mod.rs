@@ -19,6 +19,28 @@ pub struct Tabs {
     notebook: Notebook,
 }
 
+pub struct WeakTabs {
+    notebook: glib::WeakRef<Notebook>,
+}
+
+impl glib::clone::Downgrade for Tabs {
+    type Weak = WeakTabs;
+
+    fn downgrade(&self) -> WeakTabs {
+        WeakTabs {
+            notebook: ObjectExt::downgrade(&self.notebook),
+        }
+    }
+}
+
+impl glib::clone::Upgrade for WeakTabs {
+    type Strong = Tabs;
+
+    fn upgrade(&self) -> Option<Tabs> {
+        self.notebook.upgrade().map(|notebook| Tabs { notebook })
+    }
+}
+
 impl Tabs {
     pub fn new() -> Self {
         let notebook = Notebook::builder()
@@ -37,8 +59,9 @@ impl Tabs {
     pub fn open(&self, uri: &str) {
         let webview = webview::create();
         let label = TabLabel::new(&webview);
-        let tabs = self.clone();
         label.connect_close(glib::clone!(
+            #[weak(rename_to = tabs)]
+            self,
             #[weak]
             webview,
             move || tabs.close(&webview)
@@ -113,16 +136,20 @@ impl Tabs {
     }
 
     fn open_popups_in_new_tabs(&self, webview: &WebView) {
-        let tabs = self.clone();
-        webview.connect_create(move |_, action| {
-            if !action.is_user_gesture() {
-                return None;
+        webview.connect_create(glib::clone!(
+            #[weak(rename_to = tabs)]
+            self,
+            #[upgrade_or_default]
+            move |_, action| {
+                if !action.is_user_gesture() {
+                    return None;
+                }
+                if let Some(uri) = action.request().and_then(|request| request.uri()) {
+                    tabs.open(&uri);
+                }
+                None
             }
-            if let Some(uri) = action.request().and_then(|request| request.uri()) {
-                tabs.open(&uri);
-            }
-            None
-        });
+        ));
     }
 }
 

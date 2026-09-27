@@ -1,5 +1,5 @@
 use gtk::prelude::*;
-use gtk::{Box as GtkBox, Button, Entry, InputPurpose, Orientation, Spinner};
+use gtk::{Box as GtkBox, Button, Entry, InputPurpose, Orientation, Spinner, glib};
 
 use crate::ui::actions::BrowserAction;
 
@@ -50,6 +50,36 @@ pub struct Toolbar {
     container: GtkBox,
     address: Entry,
     spinner: Spinner,
+}
+
+pub struct WeakToolbar {
+    container: glib::WeakRef<GtkBox>,
+    address: glib::WeakRef<Entry>,
+    spinner: glib::WeakRef<Spinner>,
+}
+
+impl glib::clone::Downgrade for Toolbar {
+    type Weak = WeakToolbar;
+
+    fn downgrade(&self) -> WeakToolbar {
+        WeakToolbar {
+            container: ObjectExt::downgrade(&self.container),
+            address: ObjectExt::downgrade(&self.address),
+            spinner: ObjectExt::downgrade(&self.spinner),
+        }
+    }
+}
+
+impl glib::clone::Upgrade for WeakToolbar {
+    type Strong = Toolbar;
+
+    fn upgrade(&self) -> Option<Toolbar> {
+        Some(Toolbar {
+            container: self.container.upgrade()?,
+            address: self.address.upgrade()?,
+            spinner: self.spinner.upgrade()?,
+        })
+    }
 }
 
 impl Toolbar {
