@@ -18,7 +18,10 @@ renderização feita pelo **WebKitGTK 6.0**. Toda a aplicação ao redor da engi
 - Botões Voltar/Avançar habilitados somente quando existe histórico.
 - Barra de endereço e título da janela sincronizados com a página
   (`Título da página — Rust Browser`).
-- Links que pedem nova janela (`target="_blank"`) abrem na própria janela;
+- Abas: nova aba (botão `+` ou `Ctrl+T`), fechar pelo `✕` da aba ou `Ctrl+W`,
+  alternar com `Ctrl+Tab`/`Ctrl+Shift+Tab` e reordenar arrastando. A toolbar e o
+  título da janela acompanham a aba ativa; fechar a última aba fecha a janela.
+- Links que pedem nova janela (`target="_blank"`) abrem em uma nova aba;
   pop-ups abertos sem interação do usuário são bloqueados.
 - Falhas de carregamento exibem a página de erro do WebKit e são registradas no
   `stderr`, sem derrubar a aplicação.
@@ -72,15 +75,19 @@ cargo clippy -- -D warnings
 
 ## Atalhos de teclado
 
-| Atalho                | Ação                                   |
-| --------------------- | -------------------------------------- |
-| `Ctrl+L`              | Focar e selecionar a barra de endereço |
-| `Ctrl+R` / `F5`       | Recarregar                             |
-| `Alt+←`               | Voltar                                 |
-| `Alt+→`               | Avançar                                |
-| `Alt+Home`            | Página inicial                         |
-| `Ctrl+Q`              | Fechar o navegador                     |
-| `Enter` (no endereço) | Abrir URL ou pesquisar                 |
+| Atalho                         | Ação                                   |
+| ------------------------------ | -------------------------------------- |
+| `Ctrl+L`                       | Focar e selecionar a barra de endereço |
+| `Ctrl+R` / `F5`                | Recarregar                             |
+| `Alt+←`                        | Voltar                                 |
+| `Alt+→`                        | Avançar                                |
+| `Alt+Home`                     | Página inicial                         |
+| `Ctrl+T`                       | Nova aba                               |
+| `Ctrl+W`                       | Fechar aba                             |
+| `Ctrl+Tab` / `Ctrl+PgDn`       | Próxima aba                            |
+| `Ctrl+Shift+Tab` / `Ctrl+PgUp` | Aba anterior                           |
+| `Ctrl+Q`                       | Fechar o navegador                     |
+| `Enter` (no endereço)          | Abrir URL ou pesquisar                 |
 
 Os atalhos são registrados como *accelerators* do `GtkApplication`
 (`set_accels_for_action`), a convenção do GTK4 para atalhos de aplicação.
@@ -94,12 +101,19 @@ src/
 ├── browser/
 │   ├── media_formats.rs formatos de mídia essenciais e mensagem de aviso
 │   ├── media_support.rs consulta ao WebKit sobre os formatos suportados
-│   ├── navigation.rs    Navigator: comandos de navegação sobre o WebView
-│   └── webview.rs       criação do WebView, falhas e pedidos de nova janela
+│   ├── navigation.rs    abrir endereço digitado e ir para a página inicial
+│   └── webview.rs       criação do WebView e registro de falhas
 ├── ui/
-│   ├── actions.rs       BrowserAction (contrato das ações) e seus handlers
-│   ├── sync.rs          sinais do WebView → endereço, título, spinner, histórico
-│   ├── title.rs         formatação do título da janela
+│   ├── actions/
+│   │   ├── catalog.rs   BrowserAction: nomes, atalhos e parâmetros das ações
+│   │   └── handler.rs   execução das ações sobre a aba ativa
+│   ├── tabs/
+│   │   ├── mod.rs       Tabs: abrir, fechar, selecionar e pop-ups em nova aba
+│   │   ├── label.rs     rótulo da aba (título + botão fechar)
+│   │   ├── order.rs     navegação circular entre abas
+│   │   └── watch.rs     observação de propriedades da aba ativa
+│   ├── sync.rs          aba ativa → endereço, título, spinner, histórico
+│   ├── title.rs         títulos da janela e das abas
 │   ├── toolbar.rs       widgets da toolbar
 │   └── window.rs        composição da janela
 └── utils/
@@ -110,15 +124,19 @@ src/
   conhecem o WebView. Botões usam `action-name` (`win.back`, `win.reload`...),
   a barra de endereço dispara `win.open-address` com o texto digitado e os
   atalhos apontam para as mesmas ações. O enum `BrowserAction` é o contrato
-  único; `ui/actions.rs` liga cada ação ao `Navigator`.
+  único; `ui/actions/handler.rs` executa cada ação sobre a aba ativa.
 - **Estado dos botões pelo próprio GAction:** Voltar/Avançar ficam insensíveis
   porque as ações correspondentes são desabilitadas quando não há histórico —
   o que também desativa os atalhos.
-- **Sincronização reativa:** `ui/sync.rs` observa `uri`, `title`, `is-loading`
-  e `load-changed` do WebView e atualiza a interface; nada bloqueia a thread da UI.
+- **Sincronização reativa:** `Tabs::watch_current` observa `uri`, `title` e
+  `is-loading` da aba ativa (e a troca de aba) e `ui/sync.rs` atualiza a
+  interface; nada bloqueia a thread da UI.
+- **Ciclo de vida das abas:** fechar uma aba remove o WebView do `GtkNotebook`,
+  o que encerra a página; ao fechar a janela, todas as abas são liberadas.
 - **Regras de domínio puras e testadas:** a resolução de endereço (`utils/url.rs`,
-  usando as crates `url` e `percent-encoding`) e o título da janela
-  (`ui/title.rs`) são funções determinísticas com testes unitários.
+  usando as crates `url` e `percent-encoding`), os títulos (`ui/title.rs`) e a
+  ordem das abas (`ui/tabs/order.rs`) são funções determinísticas com testes
+  unitários.
 
 Cookies, cache e armazenamento de sites ficam na sessão padrão do WebKit, em
 `~/.local/share/rust-browser` e `~/.cache/rust-browser`.
@@ -133,14 +151,14 @@ Cookies, cache e armazenamento de sites ficam na sessão padrão do WebKit, em
 
 ## Limitações conhecidas
 
-- Sem abas, favoritos, histórico persistente, downloads, modo privado ou
+- Sem favoritos, histórico persistente, downloads, modo privado ou
   bloqueador de anúncios (fora do escopo desta versão).
 - Domínios sem esquema sempre recebem `https://`; servidores locais só em HTTP
   (ex.: `localhost:3000`) precisam de `http://` explícito.
 - A detecção de domínio é heurística: nomes de host sem ponto (ex.: `intranet`)
   viram pesquisa, e textos como `rust.ownership` são tratados como domínio.
-- Pop-ups legítimos (ex.: login OAuth) substituem a página atual, pois não há
-  suporte a múltiplas janelas.
+- Pop-ups legítimos (ex.: login OAuth) abrem em uma nova aba sem vínculo com a
+  página de origem (`window.opener`).
 - O botão Recarregar não vira "Parar" durante o carregamento.
 - Se a URL da página mudar enquanto você digita (ex.: redirecionamento), o texto
   da barra de endereço é substituído.

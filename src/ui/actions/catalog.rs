@@ -1,10 +1,4 @@
-use gtk::prelude::*;
-use gtk::{ApplicationWindow, gio, glib};
-use webkit6::WebView;
-use webkit6::prelude::*;
-
-use crate::browser::navigation::Navigator;
-use crate::ui::toolbar::Toolbar;
+use gtk::glib;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BrowserAction {
@@ -14,16 +8,24 @@ pub enum BrowserAction {
     Home,
     FocusAddress,
     OpenAddress,
+    NewTab,
+    CloseTab,
+    NextTab,
+    PreviousTab,
 }
 
 impl BrowserAction {
-    pub const ALL: [Self; 6] = [
+    pub const ALL: [Self; 10] = [
         Self::Back,
         Self::Forward,
         Self::Reload,
         Self::Home,
         Self::FocusAddress,
         Self::OpenAddress,
+        Self::NewTab,
+        Self::CloseTab,
+        Self::NextTab,
+        Self::PreviousTab,
     ];
 
     pub fn name(self) -> &'static str {
@@ -34,6 +36,10 @@ impl BrowserAction {
             Self::Home => "home",
             Self::FocusAddress => "focus-address",
             Self::OpenAddress => "open-address",
+            Self::NewTab => "new-tab",
+            Self::CloseTab => "close-tab",
+            Self::NextTab => "next-tab",
+            Self::PreviousTab => "previous-tab",
         }
     }
 
@@ -49,86 +55,23 @@ impl BrowserAction {
             Self::Home => &["<Alt>Home"],
             Self::FocusAddress => &["<Control>l"],
             Self::OpenAddress => &[],
+            Self::NewTab => &["<Control>t"],
+            Self::CloseTab => &["<Control>w"],
+            Self::NextTab => &["<Control>Tab", "<Control>Page_Down"],
+            Self::PreviousTab => &["<Control><Shift>Tab", "<Control>Page_Up"],
         }
     }
 
-    fn parameter_type(self) -> Option<&'static glib::VariantTy> {
+    pub(super) fn parameter_type(self) -> Option<&'static glib::VariantTy> {
         match self {
             Self::OpenAddress => Some(glib::VariantTy::STRING),
             _ => None,
         }
     }
 
-    fn depends_on_history(self) -> bool {
+    pub(super) fn depends_on_history(self) -> bool {
         matches!(self, Self::Back | Self::Forward)
     }
-}
-
-#[derive(Clone)]
-pub struct HistoryActions {
-    back: gio::SimpleAction,
-    forward: gio::SimpleAction,
-}
-
-impl HistoryActions {
-    pub fn update(&self, webview: &WebView) {
-        self.back.set_enabled(webview.can_go_back());
-        self.forward.set_enabled(webview.can_go_forward());
-    }
-}
-
-#[derive(Clone)]
-struct Handler {
-    navigator: Navigator,
-    toolbar: Toolbar,
-}
-
-impl Handler {
-    fn perform(&self, action: BrowserAction, parameter: Option<&glib::Variant>) {
-        match action {
-            BrowserAction::Back => self.navigator.back(),
-            BrowserAction::Forward => self.navigator.forward(),
-            BrowserAction::Reload => self.navigator.reload(),
-            BrowserAction::Home => self.navigator.home(),
-            BrowserAction::FocusAddress => self.toolbar.focus_address(),
-            BrowserAction::OpenAddress => {
-                if let Some(input) = parameter.and_then(glib::Variant::str) {
-                    self.navigator.open(input);
-                }
-            }
-        }
-    }
-}
-
-pub fn install(
-    window: &ApplicationWindow,
-    navigator: Navigator,
-    toolbar: Toolbar,
-) -> HistoryActions {
-    let handler = Handler { navigator, toolbar };
-    let history = HistoryActions {
-        back: register(window, BrowserAction::Back, &handler),
-        forward: register(window, BrowserAction::Forward, &handler),
-    };
-    BrowserAction::ALL
-        .into_iter()
-        .filter(|action| !action.depends_on_history())
-        .for_each(|action| {
-            register(window, action, &handler);
-        });
-    history
-}
-
-fn register(
-    window: &ApplicationWindow,
-    action: BrowserAction,
-    handler: &Handler,
-) -> gio::SimpleAction {
-    let simple = gio::SimpleAction::new(action.name(), action.parameter_type());
-    let handler = handler.clone();
-    simple.connect_activate(move |_, parameter| handler.perform(action, parameter));
-    window.add_action(&simple);
-    simple
 }
 
 #[cfg(test)]
@@ -138,10 +81,7 @@ mod tests {
     #[test]
     fn detailed_names_use_window_scope() {
         assert_eq!(BrowserAction::Back.detailed_name(), "win.back");
-        assert_eq!(
-            BrowserAction::FocusAddress.detailed_name(),
-            "win.focus-address"
-        );
+        assert_eq!(BrowserAction::NewTab.detailed_name(), "win.new-tab");
     }
 
     #[test]
@@ -149,6 +89,16 @@ mod tests {
         let mut names = BrowserAction::ALL.map(BrowserAction::name);
         names.sort_unstable();
         assert!(names.windows(2).all(|pair| pair[0] != pair[1]));
+    }
+
+    #[test]
+    fn accelerators_are_unique() {
+        let mut accels: Vec<_> = BrowserAction::ALL
+            .into_iter()
+            .flat_map(BrowserAction::accels)
+            .collect();
+        accels.sort_unstable();
+        assert!(accels.windows(2).all(|pair| pair[0] != pair[1]));
     }
 
     #[test]
@@ -167,6 +117,18 @@ mod tests {
         assert!(BrowserAction::Reload.accels().contains(&"F5"));
         assert!(BrowserAction::Back.accels().contains(&"<Alt>Left"));
         assert!(BrowserAction::Forward.accels().contains(&"<Alt>Right"));
+    }
+
+    #[test]
+    fn tab_shortcuts_are_registered() {
+        assert!(BrowserAction::NewTab.accels().contains(&"<Control>t"));
+        assert!(BrowserAction::CloseTab.accels().contains(&"<Control>w"));
+        assert!(BrowserAction::NextTab.accels().contains(&"<Control>Tab"));
+        assert!(
+            BrowserAction::PreviousTab
+                .accels()
+                .contains(&"<Control>Page_Up")
+        );
     }
 
     #[test]
