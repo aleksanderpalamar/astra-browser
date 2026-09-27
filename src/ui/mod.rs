@@ -1,5 +1,12 @@
 pub mod actions;
+pub mod address_bar;
+pub mod bookmarks;
+pub mod downloads;
+pub mod history;
+pub mod library;
+pub mod menu;
 pub mod sync;
+pub mod tabs;
 pub mod title;
 pub mod toolbar;
 pub mod window;

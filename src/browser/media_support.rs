@@ -1,4 +1,4 @@
-use std::cell::Cell;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use gtk::glib;
 use webkit6::prelude::*;
@@ -10,10 +10,11 @@ const ISOLATED_WORLD: &str = "rust-browser-media-support";
 const PROBE_SCRIPT: &str =
     "return mimeTypes.split('\\n').filter(type => !MediaSource.isTypeSupported(type)).join('\\n');";
 
+static REPORTED: AtomicBool = AtomicBool::new(false);
+
 pub fn report_on_first_load(webview: &WebView) {
-    let reported = Cell::new(false);
-    webview.connect_load_changed(move |webview, event| {
-        if event != LoadEvent::Finished || reported.replace(true) {
+    webview.connect_load_changed(|webview, event| {
+        if event != LoadEvent::Finished || REPORTED.swap(true, Ordering::Relaxed) {
             return;
         }
         glib::spawn_future_local(report_unsupported_formats(webview.clone()));

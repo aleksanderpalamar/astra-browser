@@ -1,5 +1,6 @@
 mod app;
 mod browser;
+mod library;
 mod ui;
 mod utils;
 
