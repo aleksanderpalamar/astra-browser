@@ -1,7 +1,9 @@
 use gtk::prelude::*;
 use gtk::{Application, glib};
+use webkit6::NetworkSession;
 
 use crate::browser::mode::BrowsingMode;
+use crate::browser::session;
 use crate::library::Library;
 use crate::ui::actions::{self, AppAction, BrowserAction, LibraryAction, register_accels};
 use crate::ui::window;
@@ -16,6 +18,7 @@ pub fn run() -> glib::ExitCode {
         library,
         move |app| {
             gtk::Window::set_default_icon_name(APP_ID);
+            persist_default_session_cookies();
             install_app_actions(app, &library);
             register_accelerators(app);
         }
@@ -30,6 +33,13 @@ fn activate(app: &Application, library: &Library) {
         return;
     }
     window::build(app, library, BrowsingMode::Normal);
+}
+
+fn persist_default_session_cookies() {
+    match NetworkSession::default() {
+        Some(default_session) => session::persist_cookies(&default_session),
+        None => eprintln!("Sessão de rede padrão indisponível; os cookies não serão salvos"),
+    }
 }
 
 fn install_app_actions(app: &Application, library: &Library) {

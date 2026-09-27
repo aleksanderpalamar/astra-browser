@@ -4,4 +4,5 @@ pub mod media_formats;
 pub mod media_support;
 pub mod mode;
 pub mod navigation;
+pub mod session;
 pub mod webview;
