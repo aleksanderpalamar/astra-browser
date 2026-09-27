@@ -1,0 +1,142 @@
+# Rust Browser
+
+Navegador web desktop minimalista escrito em Rust, com interface nativa **GTK4** e
+renderização feita pelo **WebKitGTK 6.0**. Toda a aplicação ao redor da engine
+(janela, toolbar, barra de endereço, navegação, atalhos e sincronização de estado)
+é implementada em Rust — sem Electron, Tauri ou frontend web.
+
+![Rust Browser exibindo a página inicial do DuckDuckGo](docs/screenshot.png)
+
+## Funcionalidades
+
+- Toolbar com **Voltar**, **Avançar**, **Recarregar**, **Home**, barra de endereço e
+  indicador de carregamento (spinner).
+- Barra de endereço inteligente:
+  - `github.com` → `https://github.com`
+  - URLs com `http://` ou `https://` são mantidas intactas
+  - texto comum vira pesquisa: `Rust ownership` → `https://duckduckgo.com/?q=Rust%20ownership`
+- Botões Voltar/Avançar habilitados somente quando existe histórico.
+- Barra de endereço e título da janela sincronizados com a página
+  (`Título da página — Rust Browser`).
+- Links que pedem nova janela (`target="_blank"`) abrem na própria janela;
+  pop-ups abertos sem interação do usuário são bloqueados.
+- Falhas de carregamento exibem a página de erro do WebKit e são registradas no
+  `stderr`, sem derrubar a aplicação.
+- Página inicial: `https://duckduckgo.com`.
+
+## Requisitos
+
+- Linux (desenvolvido e testado no Arch Linux, GNOME sobre Wayland)
+- Rust stable (edition 2024, Rust ≥ 1.85)
+- GTK ≥ 4.10
+- WebKitGTK 6.0
+- `pkgconf` e toolchain C (usados pelas crates `-sys` para localizar as bibliotecas)
+
+## Instalação das dependências no Arch Linux
+
+```bash
+sudo pacman -S --needed webkitgtk-6.0 gtk4 base-devel rustup
+rustup default stable
+```
+
+Opcional, para reproduzir áudio e vídeo em mais formatos:
+
+```bash
+sudo pacman -S --needed gst-plugins-good gst-plugins-bad gst-libav
+```
+
+## Build
+
+```bash
+cargo build            # debug
+cargo build --release  # otimizado
+```
+
+## Execução
+
+```bash
+cargo run
+```
+
+## Testes e verificação
+
+```bash
+cargo test
+cargo fmt --check
+cargo clippy -- -D warnings
+```
+
+## Atalhos de teclado
+
+| Atalho                | Ação                                   |
+| --------------------- | -------------------------------------- |
+| `Ctrl+L`              | Focar e selecionar a barra de endereço |
+| `Ctrl+R` / `F5`       | Recarregar                             |
+| `Alt+←`               | Voltar                                 |
+| `Alt+→`               | Avançar                                |
+| `Alt+Home`            | Página inicial                         |
+| `Ctrl+Q`              | Fechar o navegador                     |
+| `Enter` (no endereço) | Abrir URL ou pesquisar                 |
+
+Os atalhos são registrados como *accelerators* do `GtkApplication`
+(`set_accels_for_action`), a convenção do GTK4 para atalhos de aplicação.
+
+## Arquitetura
+
+```text
+src/
+├── main.rs              ponto de entrada
+├── app.rs               ciclo de vida do GtkApplication, ação quit e atalhos
+├── browser/
+│   ├── navigation.rs    Navigator: comandos de navegação sobre o WebView
+│   └── webview.rs       criação do WebView, falhas e pedidos de nova janela
+├── ui/
+│   ├── actions.rs       BrowserAction (contrato das ações) e seus handlers
+│   ├── sync.rs          sinais do WebView → endereço, título, spinner, histórico
+│   ├── title.rs         formatação do título da janela
+│   ├── toolbar.rs       widgets da toolbar
+│   └── window.rs        composição da janela
+└── utils/
+    └── url.rs           resolução da entrada: URL explícita, domínio ou pesquisa
+```
+
+- **Ações GTK como abstração (DIP):** a toolbar e os atalhos de teclado não
+  conhecem o WebView. Botões usam `action-name` (`win.back`, `win.reload`...),
+  a barra de endereço dispara `win.open-address` com o texto digitado e os
+  atalhos apontam para as mesmas ações. O enum `BrowserAction` é o contrato
+  único; `ui/actions.rs` liga cada ação ao `Navigator`.
+- **Estado dos botões pelo próprio GAction:** Voltar/Avançar ficam insensíveis
+  porque as ações correspondentes são desabilitadas quando não há histórico —
+  o que também desativa os atalhos.
+- **Sincronização reativa:** `ui/sync.rs` observa `uri`, `title`, `is-loading`
+  e `load-changed` do WebView e atualiza a interface; nada bloqueia a thread da UI.
+- **Regras de domínio puras e testadas:** a resolução de endereço (`utils/url.rs`,
+  usando as crates `url` e `percent-encoding`) e o título da janela
+  (`ui/title.rs`) são funções determinísticas com testes unitários.
+
+Cookies, cache e armazenamento de sites ficam na sessão padrão do WebKit, em
+`~/.local/share/rust-browser` e `~/.cache/rust-browser`.
+
+## Tecnologias
+
+- [Rust](https://www.rust-lang.org/) (edition 2024)
+- [GTK4](https://gtk.org/) via [`gtk4`](https://crates.io/crates/gtk4) 0.11
+- [WebKitGTK 6.0](https://webkitgtk.org/) via [`webkit6`](https://crates.io/crates/webkit6) 0.6
+- [`url`](https://crates.io/crates/url) 2.5 — parsing de URL (padrão WHATWG)
+- [`percent-encoding`](https://crates.io/crates/percent-encoding) 2.3 — codificação da pesquisa
+
+## Limitações conhecidas
+
+- Sem abas, favoritos, histórico persistente, downloads, modo privado ou
+  bloqueador de anúncios (fora do escopo desta versão).
+- Domínios sem esquema sempre recebem `https://`; servidores locais só em HTTP
+  (ex.: `localhost:3000`) precisam de `http://` explícito.
+- A detecção de domínio é heurística: nomes de host sem ponto (ex.: `intranet`)
+  viram pesquisa, e textos como `rust.ownership` são tratados como domínio.
+- Pop-ups legítimos (ex.: login OAuth) substituem a página atual, pois não há
+  suporte a múltiplas janelas.
+- O botão Recarregar não vira "Parar" durante o carregamento.
+- Se a URL da página mudar enquanto você digita (ex.: redirecionamento), o texto
+  da barra de endereço é substituído.
+- Se o processo web do WebKit encerrar, o erro é registrado no `stderr` e a
+  página fica em branco até recarregar.

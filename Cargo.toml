@@ -1,0 +1,13 @@
+[package]
+name = "rust-browser"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Navegador web desktop minimalista em Rust com GTK4 e WebKitGTK 6.0"
+publish = false
+
+[dependencies]
+gtk = { package = "gtk4", version = "0.11", features = ["v4_10"] }
+percent-encoding = "2.3"
+url = "2.5"
+webkit6 = "0.6"
