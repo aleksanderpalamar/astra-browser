@@ -6,7 +6,7 @@ use webkit6::prelude::*;
 use crate::ui::title::tab_title;
 
 const SPACING: i32 = 4;
-const MAX_TITLE_CHARS: i32 = 24;
+const TITLE_CHARS: i32 = 20;
 
 pub struct TabLabel {
     container: GtkBox,
@@ -18,7 +18,9 @@ impl TabLabel {
         let title = Label::builder()
             .label(tab_title(None, None))
             .ellipsize(pango::EllipsizeMode::End)
-            .max_width_chars(MAX_TITLE_CHARS)
+            .width_chars(TITLE_CHARS)
+            .max_width_chars(TITLE_CHARS)
+            .xalign(0.0)
             .build();
         let close_button = Button::builder()
             .icon_name("window-close-symbolic")
