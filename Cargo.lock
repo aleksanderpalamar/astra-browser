@@ -3,6 +3,16 @@
 version = 4
 
 [[package]]
+name = "astra-browser"
+version = "0.1.0"
+dependencies = [
+ "gtk4",
+ "percent-encoding",
+ "url",
+ "webkit6",
+]
+
+[[package]]
 name = "autocfg"
 version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -639,16 +649,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1fbf4db142a473a8d80c26bbf18454ed458bf8d26c8219c331daecfdbd079001"
 dependencies = [
  "proc-macro2",
-]
-
-[[package]]
-name = "rust-browser"
-version = "0.1.0"
-dependencies = [
- "gtk4",
- "percent-encoding",
- "url",
- "webkit6",
 ]
 
 [[package]]

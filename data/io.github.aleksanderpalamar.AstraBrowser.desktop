@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Astra Browser
+GenericName=Navegador web
+Comment=Navegador web leve em Rust com GTK4 e WebKitGTK
+Exec=astra-browser
+Icon=io.github.aleksanderpalamar.AstraBrowser
+Terminal=false
+Categories=Network;WebBrowser;GTK;
+Keywords=web;browser;internet;navegador;
+StartupNotify=true

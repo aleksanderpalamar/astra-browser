@@ -1,9 +1,9 @@
 [package]
-name = "rust-browser"
+name = "astra-browser"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.85"
-description = "Navegador web desktop minimalista em Rust com GTK4 e WebKitGTK 6.0"
+description = "Astra Browser: navegador web desktop minimalista em Rust com GTK4 e WebKitGTK 6.0"
 publish = false
 
 [dependencies]

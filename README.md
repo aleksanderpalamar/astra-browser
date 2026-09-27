@@ -1,11 +1,15 @@
-# Rust Browser
+<p align="center">
+  <img src="data/icons/src/astra.svg" width="128" alt="Ícone do Astra Browser">
+</p>
+
+# Astra Browser
 
 Navegador web desktop minimalista escrito em Rust, com interface nativa **GTK4** e
 renderização feita pelo **WebKitGTK 6.0**. Toda a aplicação ao redor da engine
 (janela, toolbar, barra de endereço, navegação, atalhos e sincronização de estado)
 é implementada em Rust — sem Electron, Tauri ou frontend web.
 
-![Rust Browser exibindo a página inicial do DuckDuckGo](docs/screenshot.png)
+![Astra Browser exibindo a página inicial do DuckDuckGo](docs/screenshot.png)
 
 ## Funcionalidades
 
@@ -17,7 +21,7 @@ renderização feita pelo **WebKitGTK 6.0**. Toda a aplicação ao redor da engi
   - texto comum vira pesquisa: `Rust ownership` → `https://duckduckgo.com/?q=Rust%20ownership`
 - Botões Voltar/Avançar habilitados somente quando existe histórico.
 - Barra de endereço e título da janela sincronizados com a página
-  (`Título da página — Rust Browser`).
+  (`Título da página — Astra Browser`).
 - Abas: nova aba (botão `+` ou `Ctrl+T`), fechar pelo `✕` da aba ou `Ctrl+W`,
   alternar com `Ctrl+Tab`/`Ctrl+Shift+Tab` e reordenar arrastando. A toolbar e o
   título da janela acompanham a aba ativa; fechar a última aba fecha a janela.
@@ -81,6 +85,35 @@ cargo build --release  # otimizado
 cargo run
 ```
 
+## Instalação no sistema (atalho e ícone)
+
+```bash
+./scripts/install.sh      # compila em release e instala em ~/.local
+./scripts/uninstall.sh    # remove o que foi instalado
+```
+
+O script instala o binário em `~/.local/bin/astra-browser`, o atalho
+`io.github.aleksanderpalamar.AstraBrowser.desktop` e os ícones no tema
+`hicolor` do usuário. Use `PREFIX=/outro/caminho` para mudar o destino. No
+GNOME/Wayland o dock e o Alt+Tab encontram o ícone pelo *app ID*
+(`io.github.aleksanderpalamar.AstraBrowser`), inclusive ao rodar com
+`cargo run` depois da instalação.
+
+## Identidade visual
+
+O ícone representa o nome (*astra*, “estrelas”): um planeta de espaço profundo,
+um anel orbital que lembra o globo de um navegador e uma estrela de quatro
+pontas. Ele é responsivo — cada faixa de tamanho usa o desenho adequado:
+
+| Arquivo (`data/icons/src/`) | Uso                                                        |
+| --------------------------- | ---------------------------------------------------------- |
+| `astra.svg`                 | 48 px ou mais (dock, grade de apps) e SVG escalável        |
+| `astra-small.svg`           | 16–32 px (barra de título, barra de tarefas, bandejas): sem detalhes finos, anel e estrela mais grossos |
+| `astra-symbolic.svg`        | ícone simbólico monocromático, recolorido pelo tema (painéis, bandejas, alto contraste) |
+
+Os PNGs de `data/icons/hicolor/` são gerados a partir dos SVGs com
+`./scripts/render-icons.sh` (requer `rsvg-convert`, do pacote `librsvg`).
+
 ## Testes e verificação
 
 ```bash
@@ -118,9 +151,17 @@ Os atalhos são registrados como *accelerators* do `GtkApplication`
 ## Arquitetura
 
 ```text
+data/
+├── icons/src/           SVGs do ícone (completo, pequeno e simbólico)
+├── icons/hicolor/       PNGs gerados por tamanho (16 a 512 px)
+└── io.github.aleksanderpalamar.AstraBrowser.desktop
+scripts/
+├── install.sh           instala binário, atalho e ícones em ~/.local
+├── uninstall.sh         remove a instalação
+└── render-icons.sh      gera os PNGs a partir dos SVGs
 src/
 ├── main.rs              ponto de entrada
-├── app.rs               ciclo de vida do GtkApplication, ação quit e atalhos
+├── app.rs               ciclo de vida do GtkApplication, ações, atalhos e ícone
 ├── library/
 │   ├── bookmarks.rs     favoritos: regras (adicionar, remover, formato do arquivo)
 │   ├── bookmark_store.rs favoritos persistidos em disco
@@ -191,8 +232,8 @@ src/
   são determinísticos e têm testes unitários.
 
 Cookies, cache e armazenamento de sites ficam na sessão padrão do WebKit, em
-`~/.local/share/rust-browser` e `~/.cache/rust-browser`. Os favoritos ficam em
-`~/.local/share/rust-browser/bookmarks.tsv` (uma linha por favorito:
+`~/.local/share/astra-browser` e `~/.cache/astra-browser`. Os favoritos ficam em
+`~/.local/share/astra-browser/bookmarks.tsv` (uma linha por favorito:
 endereço e título separados por tab) e o histórico em `history.tsv` no mesmo
 diretório (data, endereço e título), limitado às 5 000 visitas mais recentes.
 
@@ -208,6 +249,8 @@ diretório (data, endereço e título), limitado às 5 000 visitas mais recentes
 
 - Sem bloqueador de anúncios, extensões ou sincronização (fora do escopo desta
   versão).
+- Ainda não pode ser definido como navegador padrão: o atalho não declara tipos
+  MIME porque o app não abre URLs recebidas pela linha de comando.
 - Cada janela privada tem a própria sessão efêmera; janelas privadas não
   compartilham cookies entre si.
 - Arquivos baixados em janelas privadas ficam na pasta de Downloads.
