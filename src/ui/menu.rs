@@ -7,10 +7,17 @@ pub fn button() -> MenuButton {
     append(&windows, "Nova aba", BrowserAction::NewTab);
     append(&windows, "Nova janela", AppAction::NewWindow);
     append(&windows, "Nova janela privada", AppAction::NewPrivateWindow);
+    let tools = gio::Menu::new();
+    append(
+        &tools,
+        "Ferramentas do desenvolvedor",
+        BrowserAction::ToggleInspector,
+    );
     let application = gio::Menu::new();
     append(&application, "Sair", AppAction::Quit);
     let menu = gio::Menu::new();
     menu.append_section(None, &windows);
+    menu.append_section(None, &tools);
     menu.append_section(None, &application);
     MenuButton::builder()
         .icon_name("open-menu-symbolic")

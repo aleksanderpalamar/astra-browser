@@ -2,7 +2,7 @@ use gtk::glib;
 use webkit6::prelude::*;
 use webkit6::{NetworkError, NetworkSession, PolicyError, WebView};
 
-use crate::browser::{downloads, media_support};
+use crate::browser::{downloads, inspector, media_support};
 
 pub fn create(session: &NetworkSession) -> WebView {
     let webview = WebView::builder()
@@ -11,6 +11,7 @@ pub fn create(session: &NetworkSession) -> WebView {
         .vexpand(true)
         .build();
     report_failures(&webview);
+    inspector::enable(&webview);
     downloads::download_unsupported_responses(&webview);
     media_support::report_on_first_load(&webview);
     webview
