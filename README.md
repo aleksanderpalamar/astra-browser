@@ -21,6 +21,9 @@ renderização feita pelo **WebKitGTK 6.0**. Toda a aplicação ao redor da engi
 - Abas: nova aba (botão `+` ou `Ctrl+T`), fechar pelo `✕` da aba ou `Ctrl+W`,
   alternar com `Ctrl+Tab`/`Ctrl+Shift+Tab` e reordenar arrastando. A toolbar e o
   título da janela acompanham a aba ativa; fechar a última aba fecha a janela.
+- Favoritos: a estrela na barra de endereço (ou `Ctrl+D`) adiciona/remove a
+  página atual; o botão de favoritos na toolbar (ou `Ctrl+Shift+O`) lista os
+  favoritos para abrir ou remover. Ficam salvos entre execuções.
 - Links que pedem nova janela (`target="_blank"`) abrem em uma nova aba;
   pop-ups abertos sem interação do usuário são bloqueados.
 - Falhas de carregamento exibem a página de erro do WebKit e são registradas no
@@ -86,6 +89,8 @@ cargo clippy -- -D warnings
 | `Ctrl+W`                       | Fechar aba                             |
 | `Ctrl+Tab` / `Ctrl+PgDn`       | Próxima aba                            |
 | `Ctrl+Shift+Tab` / `Ctrl+PgUp` | Aba anterior                           |
+| `Ctrl+D`                       | Adicionar/remover dos favoritos        |
+| `Ctrl+Shift+O`                 | Abrir a lista de favoritos             |
 | `Ctrl+Q`                       | Fechar o navegador                     |
 | `Enter` (no endereço)          | Abrir URL ou pesquisar                 |
 
@@ -98,6 +103,11 @@ Os atalhos são registrados como *accelerators* do `GtkApplication`
 src/
 ├── main.rs              ponto de entrada
 ├── app.rs               ciclo de vida do GtkApplication, ação quit e atalhos
+├── library/
+│   ├── bookmarks.rs     favoritos: regras (adicionar, remover, formato do arquivo)
+│   ├── bookmark_store.rs favoritos persistidos em disco
+│   ├── files.rs         caminhos de dados e gravação atômica
+│   └── tsv.rs           codificação das linhas dos arquivos de dados
 ├── browser/
 │   ├── media_formats.rs formatos de mídia essenciais e mensagem de aviso
 │   ├── media_support.rs consulta ao WebKit sobre os formatos suportados
@@ -105,8 +115,15 @@ src/
 │   └── webview.rs       criação do WebView e registro de falhas
 ├── ui/
 │   ├── actions/
-│   │   ├── catalog.rs   BrowserAction: nomes, atalhos e parâmetros das ações
-│   │   └── handler.rs   execução das ações sobre a aba ativa
+│   │   ├── spec.rs      ActionSpec: contrato comum (nome, escopo, atalhos)
+│   │   ├── catalog.rs   BrowserAction: navegação e abas
+│   │   ├── library.rs   LibraryAction: favoritos
+│   │   └── handler.rs   execução das ações de navegação sobre a aba ativa
+│   ├── library/
+│   │   ├── panel.rs     painel (botão + popover) reutilizável da biblioteca
+│   │   └── link_row.rs  linha com título, endereço e remoção
+│   ├── address_bar.rs   barra de endereço e estrela de favorito
+│   ├── bookmarks.rs     favoritos na interface: estrela, painel e ações
 │   ├── tabs/
 │   │   ├── mod.rs       Tabs: abrir, fechar, selecionar e pop-ups em nova aba
 │   │   ├── label.rs     rótulo da aba (título + botão fechar)
@@ -121,10 +138,11 @@ src/
 ```
 
 - **Ações GTK como abstração (DIP):** a toolbar e os atalhos de teclado não
-  conhecem o WebView. Botões usam `action-name` (`win.back`, `win.reload`...),
+  conhecem o WebView nem os favoritos. Botões usam `action-name` (`win.back`, `win.reload`...),
   a barra de endereço dispara `win.open-address` com o texto digitado e os
-  atalhos apontam para as mesmas ações. O enum `BrowserAction` é o contrato
-  único; `ui/actions/handler.rs` executa cada ação sobre a aba ativa.
+  atalhos apontam para as mesmas ações. Os enums que implementam `ActionSpec`
+  (`BrowserAction`, `LibraryAction`) são o contrato; cada funcionalidade
+  registra os próprios handlers.
 - **Estado dos botões pelo próprio GAction:** Voltar/Avançar ficam insensíveis
   porque as ações correspondentes são desabilitadas quando não há histórico —
   o que também desativa os atalhos.
@@ -133,13 +151,17 @@ src/
   interface; nada bloqueia a thread da UI.
 - **Ciclo de vida das abas:** fechar uma aba remove o WebView do `GtkNotebook`,
   o que encerra a página; ao fechar a janela, todas as abas são liberadas.
+  `Tabs`, `Toolbar` e os controladores implementam `glib::clone::Downgrade`,
+  e as closures os capturam por referência fraca, sem ciclos de referência.
 - **Regras de domínio puras e testadas:** a resolução de endereço (`utils/url.rs`,
-  usando as crates `url` e `percent-encoding`), os títulos (`ui/title.rs`) e a
-  ordem das abas (`ui/tabs/order.rs`) são funções determinísticas com testes
-  unitários.
+  usando as crates `url` e `percent-encoding`), os títulos (`ui/title.rs`), a
+  ordem das abas (`ui/tabs/order.rs`) e as regras de favoritos
+  (`library/bookmarks.rs`) são determinísticas e têm testes unitários.
 
 Cookies, cache e armazenamento de sites ficam na sessão padrão do WebKit, em
-`~/.local/share/rust-browser` e `~/.cache/rust-browser`.
+`~/.local/share/rust-browser` e `~/.cache/rust-browser`. Os favoritos ficam em
+`~/.local/share/rust-browser/bookmarks.tsv` (uma linha por favorito:
+endereço e título separados por tab).
 
 ## Tecnologias
 
@@ -151,8 +173,8 @@ Cookies, cache e armazenamento de sites ficam na sessão padrão do WebKit, em
 
 ## Limitações conhecidas
 
-- Sem favoritos, histórico persistente, downloads, modo privado ou
-  bloqueador de anúncios (fora do escopo desta versão).
+- Sem histórico persistente, downloads, modo privado ou bloqueador de
+  anúncios (fora do escopo desta versão).
 - Domínios sem esquema sempre recebem `https://`; servidores locais só em HTTP
   (ex.: `localhost:3000`) precisam de `http://` explícito.
 - A detecção de domínio é heurística: nomes de host sem ponto (ex.: `intranet`)

@@ -11,7 +11,7 @@ use webkit6::WebView;
 use webkit6::prelude::*;
 
 use crate::browser::webview;
-use crate::ui::actions::BrowserAction;
+use crate::ui::actions::{ActionSpec, BrowserAction};
 use label::TabLabel;
 
 #[derive(Clone)]

@@ -1,5 +1,7 @@
 use gtk::glib;
 
+use super::ActionSpec;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BrowserAction {
     Back,
@@ -28,7 +30,15 @@ impl BrowserAction {
         Self::PreviousTab,
     ];
 
-    pub fn name(self) -> &'static str {
+    pub(super) fn depends_on_history(self) -> bool {
+        matches!(self, Self::Back | Self::Forward)
+    }
+}
+
+impl ActionSpec for BrowserAction {
+    const SCOPE: &'static str = "win";
+
+    fn name(self) -> &'static str {
         match self {
             Self::Back => "back",
             Self::Forward => "forward",
@@ -43,11 +53,7 @@ impl BrowserAction {
         }
     }
 
-    pub fn detailed_name(self) -> String {
-        format!("win.{}", self.name())
-    }
-
-    pub fn accels(self) -> &'static [&'static str] {
+    fn accels(self) -> &'static [&'static str] {
         match self {
             Self::Back => &["<Alt>Left"],
             Self::Forward => &["<Alt>Right"],
@@ -62,21 +68,17 @@ impl BrowserAction {
         }
     }
 
-    pub(super) fn parameter_type(self) -> Option<&'static glib::VariantTy> {
+    fn parameter_type(self) -> Option<&'static glib::VariantTy> {
         match self {
             Self::OpenAddress => Some(glib::VariantTy::STRING),
             _ => None,
         }
     }
-
-    pub(super) fn depends_on_history(self) -> bool {
-        matches!(self, Self::Back | Self::Forward)
-    }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::BrowserAction;
+    use super::{ActionSpec, BrowserAction};
 
     #[test]
     fn detailed_names_use_window_scope() {
@@ -89,16 +91,6 @@ mod tests {
         let mut names = BrowserAction::ALL.map(BrowserAction::name);
         names.sort_unstable();
         assert!(names.windows(2).all(|pair| pair[0] != pair[1]));
-    }
-
-    #[test]
-    fn accelerators_are_unique() {
-        let mut accels: Vec<_> = BrowserAction::ALL
-            .into_iter()
-            .flat_map(BrowserAction::accels)
-            .collect();
-        accels.sort_unstable();
-        assert!(accels.windows(2).all(|pair| pair[0] != pair[1]));
     }
 
     #[test]

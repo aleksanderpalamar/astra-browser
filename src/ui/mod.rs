@@ -1,4 +1,7 @@
 pub mod actions;
+pub mod address_bar;
+pub mod bookmarks;
+pub mod library;
 pub mod sync;
 pub mod tabs;
 pub mod title;

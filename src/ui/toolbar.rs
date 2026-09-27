@@ -1,10 +1,11 @@
 use gtk::prelude::*;
-use gtk::{Box as GtkBox, Button, Entry, InputPurpose, Orientation, Spinner, glib};
+use gtk::{Box as GtkBox, Button, Entry, Orientation, Spinner, Widget, glib};
 
-use crate::ui::actions::BrowserAction;
+use crate::library::bookmarks::BookmarkState;
+use crate::ui::actions::{ActionSpec, BrowserAction};
+use crate::ui::address_bar;
 
 const SPACING: i32 = 6;
-const ADDRESS_PLACEHOLDER: &str = "Pesquise ou digite um endereço";
 
 struct NavigationButton {
     action: BrowserAction,
@@ -89,7 +90,7 @@ impl Toolbar {
         for button in &NAVIGATION_BUTTONS {
             container.append(&button.build());
         }
-        let address = address_entry();
+        let address = address_bar::build();
         let spinner = Spinner::new();
         container.append(&address);
         container.append(&spinner);
@@ -116,20 +117,12 @@ impl Toolbar {
     pub fn set_loading(&self, loading: bool) {
         self.spinner.set_spinning(loading);
     }
-}
 
-fn address_entry() -> Entry {
-    let entry = Entry::builder()
-        .hexpand(true)
-        .input_purpose(InputPurpose::Url)
-        .placeholder_text(ADDRESS_PLACEHOLDER)
-        .build();
-    entry.connect_activate(|entry| {
-        let input = entry.text().to_variant();
-        let action = BrowserAction::OpenAddress.detailed_name();
-        if let Err(error) = entry.activate_action(&action, Some(&input)) {
-            eprintln!("Não foi possível abrir o endereço: {error}");
-        }
-    });
-    entry
+    pub fn show_bookmark_state(&self, state: BookmarkState) {
+        address_bar::show_bookmark_state(&self.address, state);
+    }
+
+    pub fn add_end(&self, widget: &impl IsA<Widget>) {
+        self.container.append(widget);
+    }
 }

@@ -1,9 +1,8 @@
-use gtk::prelude::*;
 use gtk::{ApplicationWindow, gio, glib};
 use webkit6::WebView;
 use webkit6::prelude::*;
 
-use super::BrowserAction;
+use super::{BrowserAction, register};
 use crate::browser::navigation::{self, HOME_URI};
 use crate::ui::tabs::{Direction, Tabs};
 use crate::ui::toolbar::Toolbar;
@@ -62,32 +61,33 @@ impl Handler {
 
 pub fn install(window: &ApplicationWindow, tabs: &Tabs, toolbar: &Toolbar) -> HistoryActions {
     let history = HistoryActions {
-        back: register(window, BrowserAction::Back, tabs, toolbar),
-        forward: register(window, BrowserAction::Forward, tabs, toolbar),
+        back: register_browser_action(window, BrowserAction::Back, tabs, toolbar),
+        forward: register_browser_action(window, BrowserAction::Forward, tabs, toolbar),
     };
     BrowserAction::ALL
         .into_iter()
         .filter(|action| !action.depends_on_history())
         .for_each(|action| {
-            register(window, action, tabs, toolbar);
+            register_browser_action(window, action, tabs, toolbar);
         });
     history
 }
 
-fn register(
+fn register_browser_action(
     window: &ApplicationWindow,
     action: BrowserAction,
     tabs: &Tabs,
     toolbar: &Toolbar,
 ) -> gio::SimpleAction {
-    let simple = gio::SimpleAction::new(action.name(), action.parameter_type());
-    simple.connect_activate(glib::clone!(
-        #[weak]
-        tabs,
-        #[weak]
-        toolbar,
-        move |_, parameter| Handler { tabs, toolbar }.perform(action, parameter)
-    ));
-    window.add_action(&simple);
-    simple
+    register(
+        window,
+        action,
+        glib::clone!(
+            #[weak]
+            tabs,
+            #[weak]
+            toolbar,
+            move |parameter| Handler { tabs, toolbar }.perform(action, parameter)
+        ),
+    )
 }
