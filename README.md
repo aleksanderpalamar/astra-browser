@@ -27,6 +27,10 @@ renderização feita pelo **WebKitGTK 6.0**. Toda a aplicação ao redor da engi
 - Histórico persistente: cada página visitada é registrada; o botão de
   histórico (ou `Ctrl+H`) lista as visitas mais recentes, com busca por título
   ou endereço e opção de limpar tudo.
+- Downloads: anexos e arquivos que o WebKit não sabe exibir são baixados para a
+  pasta de Downloads do usuário (sem sobrescrever: `foto (1).png`); o painel de
+  downloads (ou `Ctrl+Shift+Y`) mostra progresso, permite cancelar e abrir o
+  arquivo concluído.
 - Links que pedem nova janela (`target="_blank"`) abrem em uma nova aba;
   pop-ups abertos sem interação do usuário são bloqueados.
 - Falhas de carregamento exibem a página de erro do WebKit e são registradas no
@@ -95,6 +99,7 @@ cargo clippy -- -D warnings
 | `Ctrl+D`                       | Adicionar/remover dos favoritos        |
 | `Ctrl+Shift+O`                 | Abrir a lista de favoritos             |
 | `Ctrl+H`                       | Abrir o histórico                      |
+| `Ctrl+Shift+Y`                 | Abrir os downloads                     |
 | `Ctrl+Q`                       | Fechar o navegador                     |
 | `Enter` (no endereço)          | Abrir URL ou pesquisar                 |
 
@@ -116,21 +121,24 @@ src/
 │   ├── files.rs         caminhos de dados, gravação atômica e acréscimo
 │   └── tsv.rs           codificação das linhas dos arquivos de dados
 ├── browser/
+│   ├── downloads.rs     downloads: política de resposta e destino do arquivo
+│   ├── download_name.rs nome de destino único e seguro na pasta de downloads
 │   ├── media_formats.rs formatos de mídia essenciais e mensagem de aviso
 │   ├── media_support.rs consulta ao WebKit sobre os formatos suportados
 │   ├── navigation.rs    abrir endereço digitado e ir para a página inicial
-│   └── webview.rs       criação do WebView e registro de falhas
+│   └── webview.rs       criação do WebView e registro de falhas reais
 ├── ui/
 │   ├── actions/
 │   │   ├── spec.rs      ActionSpec: contrato comum (nome, escopo, atalhos)
 │   │   ├── catalog.rs   BrowserAction: navegação e abas
-│   │   ├── library.rs   LibraryAction: favoritos e histórico
+│   │   ├── library.rs   LibraryAction: favoritos, histórico e downloads
 │   │   └── handler.rs   execução das ações de navegação sobre a aba ativa
 │   ├── library/
 │   │   ├── panel.rs     painel (botão + popover) reutilizável da biblioteca
 │   │   └── link_row.rs  linha com título, endereço e remoção
 │   ├── address_bar.rs   barra de endereço e estrela de favorito
 │   ├── bookmarks.rs     favoritos na interface: estrela, painel e ações
+│   ├── downloads/       painel de downloads, linha com progresso e status
 │   ├── history.rs       registro das visitas e painel de histórico
 │   ├── tabs/
 │   │   ├── mod.rs       Tabs: abrir, fechar, selecionar e pop-ups em nova aba
@@ -163,8 +171,9 @@ src/
   e as closures os capturam por referência fraca, sem ciclos de referência.
 - **Regras de domínio puras e testadas:** a resolução de endereço (`utils/url.rs`,
   usando as crates `url` e `percent-encoding`), os títulos (`ui/title.rs`), a
-  ordem das abas (`ui/tabs/order.rs`) e as regras de favoritos e histórico
-  (`library/`) são determinísticas e têm testes unitários.
+  ordem das abas (`ui/tabs/order.rs`), as regras de favoritos e histórico
+  (`library/`) e o nome de destino dos downloads (`browser/download_name.rs`)
+  são determinísticos e têm testes unitários.
 
 Cookies, cache e armazenamento de sites ficam na sessão padrão do WebKit, em
 `~/.local/share/rust-browser` e `~/.cache/rust-browser`. Os favoritos ficam em
@@ -182,8 +191,8 @@ diretório (data, endereço e título), limitado às 5 000 visitas mais recentes
 
 ## Limitações conhecidas
 
-- Sem downloads, modo privado ou bloqueador de anúncios (fora do escopo
-  desta versão).
+- Sem modo privado ou bloqueador de anúncios (fora do escopo desta versão).
+- A lista de downloads vale só para a sessão atual (não é persistida).
 - Domínios sem esquema sempre recebem `https://`; servidores locais só em HTTP
   (ex.: `localhost:3000`) precisam de `http://` explícito.
 - A detecção de domínio é heurística: nomes de host sem ponto (ex.: `intranet`)

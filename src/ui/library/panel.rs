@@ -98,6 +98,11 @@ impl LibraryPanel {
         }
     }
 
+    pub fn prepend_row(&self, row: &GtkBox) {
+        self.empty.set_visible(false);
+        self.rows.prepend(row);
+    }
+
     pub fn show_rows(&self, rows: Vec<GtkBox>) {
         while let Some(child) = self.rows.first_child() {
             self.rows.remove(&child);

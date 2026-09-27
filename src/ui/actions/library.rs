@@ -5,10 +5,16 @@ pub enum LibraryAction {
     ToggleBookmark,
     ShowBookmarks,
     ShowHistory,
+    ShowDownloads,
 }
 
 impl LibraryAction {
-    pub const ALL: [Self; 3] = [Self::ToggleBookmark, Self::ShowBookmarks, Self::ShowHistory];
+    pub const ALL: [Self; 4] = [
+        Self::ToggleBookmark,
+        Self::ShowBookmarks,
+        Self::ShowHistory,
+        Self::ShowDownloads,
+    ];
 }
 
 impl ActionSpec for LibraryAction {
@@ -19,6 +25,7 @@ impl ActionSpec for LibraryAction {
             Self::ToggleBookmark => "toggle-bookmark",
             Self::ShowBookmarks => "show-bookmarks",
             Self::ShowHistory => "show-history",
+            Self::ShowDownloads => "show-downloads",
         }
     }
 
@@ -27,6 +34,7 @@ impl ActionSpec for LibraryAction {
             Self::ToggleBookmark => &["<Control>d"],
             Self::ShowBookmarks => &["<Control><Shift>o"],
             Self::ShowHistory => &["<Control>h"],
+            Self::ShowDownloads => &["<Control><Shift>y"],
         }
     }
 }
@@ -60,5 +68,14 @@ mod tests {
             "win.show-history"
         );
         assert_eq!(LibraryAction::ShowHistory.accels(), ["<Control>h"]);
+    }
+
+    #[test]
+    fn downloads_shortcut_is_registered() {
+        assert_eq!(
+            LibraryAction::ShowDownloads.detailed_name(),
+            "win.show-downloads"
+        );
+        assert_eq!(LibraryAction::ShowDownloads.accels(), ["<Control><Shift>y"]);
     }
 }

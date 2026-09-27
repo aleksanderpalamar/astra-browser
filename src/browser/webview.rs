@@ -1,18 +1,20 @@
+use gtk::glib;
 use webkit6::prelude::*;
-use webkit6::{NetworkError, WebView};
+use webkit6::{NetworkError, PolicyError, WebView};
 
-use crate::browser::media_support;
+use crate::browser::{downloads, media_support};
 
 pub fn create() -> WebView {
     let webview = WebView::builder().hexpand(true).vexpand(true).build();
     report_failures(&webview);
+    downloads::download_unsupported_responses(&webview);
     media_support::report_on_first_load(&webview);
     webview
 }
 
 fn report_failures(webview: &WebView) {
     webview.connect_load_failed(|_, _, uri, error| {
-        if !error.matches(NetworkError::Cancelled) {
+        if !is_expected_interruption(error) {
             eprintln!("Falha ao carregar {uri}: {error}");
         }
         false
@@ -21,4 +23,34 @@ fn report_failures(webview: &WebView) {
         let uri = webview.uri().unwrap_or_default();
         eprintln!("Processo web encerrado ({reason:?}) em {uri}");
     });
+}
+
+fn is_expected_interruption(error: &glib::Error) -> bool {
+    error.matches(NetworkError::Cancelled)
+        || error.matches(PolicyError::FrameLoadInterruptedByPolicyChange)
+}
+
+#[cfg(test)]
+mod tests {
+    use gtk::glib;
+    use webkit6::{NetworkError, PolicyError};
+
+    use super::is_expected_interruption;
+
+    #[test]
+    fn cancelled_loads_and_downloads_are_expected() {
+        let cancelled = glib::Error::new(NetworkError::Cancelled, "cancelado");
+        let download =
+            glib::Error::new(PolicyError::FrameLoadInterruptedByPolicyChange, "download");
+        assert!(is_expected_interruption(&cancelled));
+        assert!(is_expected_interruption(&download));
+    }
+
+    #[test]
+    fn real_failures_are_reported() {
+        let failure = glib::Error::new(NetworkError::Failed, "sem rede");
+        let mime = glib::Error::new(PolicyError::CannotShowMimeType, "mime");
+        assert!(!is_expected_interruption(&failure));
+        assert!(!is_expected_interruption(&mime));
+    }
 }
