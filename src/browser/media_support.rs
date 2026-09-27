@@ -6,7 +6,7 @@ use webkit6::{LoadEvent, WebView};
 
 use crate::browser::media_formats::{ESSENTIAL_FORMATS, unsupported_formats_warning};
 
-const ISOLATED_WORLD: &str = "rust-browser-media-support";
+const ISOLATED_WORLD: &str = "astra-browser-media-support";
 const PROBE_SCRIPT: &str =
     "return mimeTypes.split('\\n').filter(type => !MediaSource.isTypeSupported(type)).join('\\n');";
 

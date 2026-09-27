@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 use gtk::glib;
 
-const APP_DIRECTORY: &str = "rust-browser";
+const APP_DIRECTORY: &str = "astra-browser";
 
 pub fn data_path(file_name: &str) -> PathBuf {
     glib::user_data_dir().join(APP_DIRECTORY).join(file_name)
@@ -45,7 +45,7 @@ mod tests {
     use super::{append_line, read_or_empty, write_atomically};
 
     fn scratch_dir(name: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!("rust-browser-{}-{name}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("astra-browser-{}-{name}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         dir
     }

@@ -6,7 +6,7 @@ use crate::library::Library;
 use crate::ui::actions::{self, AppAction, BrowserAction, LibraryAction, register_accels};
 use crate::ui::window;
 
-const APP_ID: &str = "io.github.aleksanderpalamar.RustBrowser";
+const APP_ID: &str = "io.github.aleksanderpalamar.AstraBrowser";
 
 pub fn run() -> glib::ExitCode {
     let app = Application::builder().application_id(APP_ID).build();
@@ -15,6 +15,7 @@ pub fn run() -> glib::ExitCode {
         #[strong]
         library,
         move |app| {
+            gtk::Window::set_default_icon_name(APP_ID);
             install_app_actions(app, &library);
             register_accelerators(app);
         }

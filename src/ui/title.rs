@@ -1,6 +1,6 @@
 use crate::browser::mode::BrowsingMode;
 
-pub const APP_NAME: &str = "Rust Browser";
+pub const APP_NAME: &str = "Astra Browser";
 pub const NEW_TAB_TITLE: &str = "Nova aba";
 const PRIVATE_SUFFIX: &str = " (navegação privada)";
 
@@ -34,7 +34,7 @@ mod tests {
     fn appends_app_name_to_page_title() {
         assert_eq!(
             window_title(Some("GitHub · Build and ship software"), Normal),
-            "GitHub · Build and ship software — Rust Browser"
+            "GitHub · Build and ship software — Astra Browser"
         );
     }
 
@@ -49,7 +49,7 @@ mod tests {
     fn trims_page_title() {
         assert_eq!(
             window_title(Some("  DuckDuckGo \n"), Normal),
-            "DuckDuckGo — Rust Browser"
+            "DuckDuckGo — Astra Browser"
         );
     }
 
@@ -57,11 +57,11 @@ mod tests {
     fn private_windows_are_labeled() {
         assert_eq!(
             window_title(Some("GitHub"), Private),
-            "GitHub — Rust Browser (navegação privada)"
+            "GitHub — Astra Browser (navegação privada)"
         );
         assert_eq!(
             window_title(None, Private),
-            "Rust Browser (navegação privada)"
+            "Astra Browser (navegação privada)"
         );
     }
 
