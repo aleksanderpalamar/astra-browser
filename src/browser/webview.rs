@@ -26,6 +26,7 @@ fn configure(webview: &WebView) {
     settings.set_enable_developer_extras(true);
     settings.set_enable_media_stream(true);
     settings.set_enable_webrtc(true);
+    settings.set_enable_smooth_scrolling(false);
 }
 
 fn report_failures(webview: &WebView) {
