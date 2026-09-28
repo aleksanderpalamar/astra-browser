@@ -5,15 +5,17 @@ pub enum AppAction {
     NewWindow,
     NewPrivateWindow,
     ToggleAdBlock,
+    ToggleHardwareAcceleration,
     ShowPreferences,
     Quit,
 }
 
 impl AppAction {
-    pub const ALL: [Self; 5] = [
+    pub const ALL: [Self; 6] = [
         Self::NewWindow,
         Self::NewPrivateWindow,
         Self::ToggleAdBlock,
+        Self::ToggleHardwareAcceleration,
         Self::ShowPreferences,
         Self::Quit,
     ];
@@ -27,6 +29,7 @@ impl ActionSpec for AppAction {
             Self::NewWindow => "new-window",
             Self::NewPrivateWindow => "new-private-window",
             Self::ToggleAdBlock => "toggle-adblock",
+            Self::ToggleHardwareAcceleration => "toggle-hardware-acceleration",
             Self::ShowPreferences => "show-preferences",
             Self::Quit => "quit",
         }
@@ -36,7 +39,7 @@ impl ActionSpec for AppAction {
         match self {
             Self::NewWindow => &["<Control>n"],
             Self::NewPrivateWindow => &["<Control><Shift>p"],
-            Self::ToggleAdBlock => &[],
+            Self::ToggleAdBlock | Self::ToggleHardwareAcceleration => &[],
             Self::ShowPreferences => &["<Control>comma"],
             Self::Quit => &["<Control>q"],
         }

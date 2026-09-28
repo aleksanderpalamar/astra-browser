@@ -1,5 +1,4 @@
 pub mod actions;
-pub mod adblock;
 pub mod address_bar;
 pub mod bookmarks;
 pub mod downloads;
@@ -11,5 +10,6 @@ pub mod preferences;
 pub mod sync;
 pub mod tabs;
 pub mod title;
+pub mod toggles;
 pub mod toolbar;
 pub mod window;

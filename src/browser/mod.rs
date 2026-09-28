@@ -1,6 +1,7 @@
 pub mod adblock;
 pub mod download_name;
 pub mod downloads;
+pub mod engine;
 pub mod inspector;
 pub mod media_formats;
 pub mod media_support;

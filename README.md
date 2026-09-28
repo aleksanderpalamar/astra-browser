@@ -51,9 +51,15 @@ renderização feita pelo **WebKitGTK 6.0**. Toda a aplicação ao redor da engi
   do JSON do player (como o uBlock Origin faz) e regras próprias do Astra
   escondem os cards patrocinados. O bloqueador é ligado/desligado em
   Configurações (a escolha é lembrada; recarregue a página para ver o efeito).
-- Configurações: janela nativa aberta pelo menu principal ou `Ctrl+,`, com a
-  seção "Privacidade e segurança" (por enquanto, o interruptor "Bloquear
-  anúncios").
+- Configurações: janela nativa aberta pelo menu principal ou `Ctrl+,`, com as
+  seções "Privacidade e segurança" (interruptor "Bloquear anúncios") e
+  "Desempenho" (interruptor "Usar aceleração de hardware" e botão "Diagnóstico
+  da GPU").
+- GPU: páginas, WebGL e canvas 2D são desenhados pela GPU (composição por
+  DMA-BUF). A aceleração pode ser desligada em Configurações → Desempenho, com
+  efeito imediato em todas as abas; `webkit://gpu` (ou o botão "Diagnóstico da
+  GPU") mostra o renderizador em uso. Na primeira página carregada, o Astra
+  avisa no `stderr` quando os vídeos estão sendo decodificados pela CPU.
 - Microfone e câmera: quando um site pede acesso (ex.: ditado por voz), o
   Astra pergunta "*site* quer usar o seu microfone" com as opções Bloquear e
   Permitir; fechar o diálogo bloqueia. Outros pedidos de permissão continuam
@@ -78,7 +84,8 @@ renderização feita pelo **WebKitGTK 6.0**. Toda a aplicação ao redor da engi
 - GTK ≥ 4.10
 - WebKitGTK 6.0
 - Plugins do GStreamer para áudio e vídeo (`gst-plugins-good`, `gst-plugins-bad`,
-  `gst-libav`)
+  `gst-libav`); para decodificar vídeo pela GPU em AMD/Intel, `gst-plugin-va`
+  (VA-API)
 - `pkgconf` e toolchain C (usados pelas crates `-sys` para localizar as bibliotecas)
 
 ## Instalação das dependências no Arch Linux
@@ -190,11 +197,12 @@ src/
 │   ├── bookmark_store.rs favoritos persistidos em disco
 │   ├── history/         histórico: registro, busca e limite de visitas
 │   ├── history_store.rs histórico persistido em disco (somente acréscimo)
-│   ├── preferences.rs   preferências do usuário (bloqueador ligado/desligado)
+│   ├── preferences.rs   preferências do usuário (interruptores tipados)
 │   ├── visit.rs         visita: formato da linha e páginas registráveis
 │   ├── files.rs         caminhos de dados, gravação atômica e acréscimo
 │   └── tsv.rs           codificação das linhas dos arquivos de dados
 ├── browser/
+│   ├── engine.rs        WebEngine: configurações e conteúdo compartilhados pelos WebViews
 │   ├── adblock/
 │   │   ├── mod.rs       AdBlocker: carrega do cache, baixa, compila e aplica
 │   │   ├── filters.rs   fonte da lista e regra de atualização semanal
@@ -213,7 +221,7 @@ src/
 │   ├── session.rs       cookies da sessão padrão persistidos em SQLite
 │   └── webview.rs       criação do WebView e registro de falhas reais
 ├── ui/
-│   ├── adblock.rs       ação "Bloquear anúncios" com estado persistido
+│   ├── toggles.rs       interruptores persistidos (bloqueador, aceleração de hardware)
 │   ├── actions/
 │   │   ├── spec.rs      ActionSpec: contrato comum (nome, escopo, atalhos)
 │   │   ├── app.rs       AppAction: janelas, bloqueador, configurações e sair
@@ -229,7 +237,7 @@ src/
 │   ├── history.rs       registro das visitas e painel de histórico
 │   ├── menu.rs          menu principal
 │   ├── permissions/     pergunta de permissão para microfone e câmera
-│   ├── preferences.rs   janela de Configurações
+│   ├── preferences.rs   janela de Configurações (privacidade e desempenho)
 │   ├── tabs/
 │   │   ├── mod.rs       Tabs: abrir, fechar, selecionar e pop-ups em nova aba
 │   │   ├── label.rs     rótulo da aba (título + botão fechar)
@@ -309,6 +317,8 @@ diretório (data, endereço e título), limitado às 5 000 visitas mais recentes
   perfil compatível), mesmo com o `gst-plugin-isobmff` instalado.
 - A permissão de microfone/câmera não é lembrada: cada pedido do site abre a
   pergunta de novo.
+- WebGPU indisponível: o `webkitgtk-6.0` do Arch é compilado sem WebGPU
+  (`navigator.gpu` não existe), mesmo com o recurso ligado.
 - Ainda não pode ser definido como navegador padrão: o atalho não declara tipos
   MIME porque o app não abre URLs recebidas pela linha de comando.
 - Cada janela privada tem a própria sessão efêmera; janelas privadas não
