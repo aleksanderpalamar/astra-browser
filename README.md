@@ -17,6 +17,9 @@ renderização feita pelo **WebKitGTK 6.0**. Toda a aplicação ao redor da engi
   indicador de carregamento (spinner).
 - Barra de endereço inteligente:
   - `github.com` → `https://github.com`
+  - endereços locais usam HTTP: `localhost:3000` → `http://localhost:3000`
+    (também `127.0.0.1`, IPs de rede privada como `192.168.0.10`, IPv6 local
+    e nomes `.localhost`, `.local`, `.lan`, `.internal`, `.home.arpa` e `.test`)
   - URLs com `http://` ou `https://` são mantidas intactas
   - texto comum vira pesquisa: `Rust ownership` → `https://duckduckgo.com/?q=Rust%20ownership`
 - Botões Voltar/Avançar habilitados somente quando existe histórico.
@@ -266,7 +269,10 @@ src/
 │   └── window.rs        composição da janela conforme o modo de navegação
 └── utils/
     ├── clock.rs         horário atual em segundos Unix
-    └── url.rs           resolução da entrada: URL explícita, domínio ou pesquisa
+    └── url/
+        ├── mod.rs       resolução da entrada: URL explícita, endereço ou pesquisa
+        ├── host.rs      host local (HTTP) ou público (HTTPS)
+        └── tests.rs     casos da resolução de endereços
 ```
 
 - **Ações GTK como abstração (DIP):** a toolbar e os atalhos de teclado não
@@ -287,7 +293,7 @@ src/
   o que encerra a página; ao fechar a janela, todas as abas são liberadas.
   `Tabs`, `Toolbar` e os controladores implementam `glib::clone::Downgrade`,
   e as closures os capturam por referência fraca, sem ciclos de referência.
-- **Regras de domínio puras e testadas:** a resolução de endereço (`utils/url.rs`,
+- **Regras de domínio puras e testadas:** a resolução de endereço (`utils/url/`,
   usando as crates `url` e `percent-encoding`), os títulos (`ui/title.rs`), a
   ordem das abas (`ui/tabs/order.rs`), as regras de favoritos e histórico
   (`library/`), o nome de destino dos downloads (`browser/download_name.rs`) e
@@ -341,8 +347,8 @@ diretório (data, endereço e título), limitado às 5 000 visitas mais recentes
   compartilham cookies entre si.
 - Arquivos baixados em janelas privadas ficam na pasta de Downloads.
 - A lista de downloads vale só para a sessão atual (não é persistida).
-- Domínios sem esquema sempre recebem `https://`; servidores locais só em HTTP
-  (ex.: `localhost:3000`) precisam de `http://` explícito.
+- Domínios públicos sem esquema recebem `https://`; sites públicos que só
+  atendem em HTTP precisam de `http://` explícito.
 - A detecção de domínio é heurística: nomes de host sem ponto (ex.: `intranet`)
   viram pesquisa, e textos como `rust.ownership` são tratados como domínio.
 - Pop-ups legítimos (ex.: login OAuth) abrem em uma nova aba sem vínculo com a
