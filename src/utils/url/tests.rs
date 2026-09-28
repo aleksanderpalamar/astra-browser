@@ -130,3 +130,37 @@ fn searches_text_with_unknown_scheme() {
         "https://duckduckgo.com/?q=rust%3A%20ownership"
     );
 }
+
+#[test]
+fn unknown_suffixes_are_searched() {
+    assert_eq!(
+        resolve("astra.ownership"),
+        "https://duckduckgo.com/?q=astra.ownership"
+    );
+    assert_eq!(
+        resolve("index.html"),
+        "https://duckduckgo.com/?q=index.html"
+    );
+}
+
+#[test]
+fn known_suffixes_open_with_https() {
+    assert_eq!(resolve("exemplo.com.br"), "https://exemplo.com.br");
+    assert_eq!(resolve("gov.br"), "https://gov.br");
+    assert_eq!(resolve("пример.рф"), "https://пример.рф");
+}
+
+#[test]
+fn single_words_written_as_addresses_open_with_http() {
+    assert_eq!(resolve("intranet:8080"), "http://intranet:8080");
+    assert_eq!(resolve("intranet:80"), "http://intranet:80");
+    assert_eq!(resolve("intranet/"), "http://intranet/");
+    assert_eq!(resolve("nas/admin"), "http://nas/admin");
+    assert_eq!(resolve("intranet"), "https://duckduckgo.com/?q=intranet");
+}
+
+#[test]
+fn unknown_suffixes_written_as_addresses_open_with_http() {
+    assert_eq!(resolve("servidor.corp:8080"), "http://servidor.corp:8080");
+    assert_eq!(resolve("wiki.empresa/"), "http://wiki.empresa/");
+}
