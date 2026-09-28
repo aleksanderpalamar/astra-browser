@@ -1,21 +1,34 @@
 use gtk::glib;
 use webkit6::prelude::*;
-use webkit6::{NetworkError, NetworkSession, PolicyError, UserContentManager, WebView};
+use webkit6::{NetworkError, NetworkSession, PolicyError, UserContentManager, WebContext, WebView};
 
 use crate::browser::{downloads, media_support};
 
-pub fn create(session: &NetworkSession, content: &UserContentManager) -> WebView {
-    let webview = WebView::builder()
-        .network_session(session)
-        .user_content_manager(content)
-        .hexpand(true)
-        .vexpand(true)
-        .build();
-    configure(&webview);
-    report_failures(&webview);
-    downloads::download_unsupported_responses(&webview);
-    media_support::report_on_first_load(&webview);
-    webview
+#[derive(Clone)]
+pub struct WebViewFactory {
+    context: WebContext,
+    content: UserContentManager,
+}
+
+impl WebViewFactory {
+    pub fn new(context: WebContext, content: UserContentManager) -> Self {
+        Self { context, content }
+    }
+
+    pub fn create(&self, session: &NetworkSession) -> WebView {
+        let webview = WebView::builder()
+            .web_context(&self.context)
+            .network_session(session)
+            .user_content_manager(&self.content)
+            .hexpand(true)
+            .vexpand(true)
+            .build();
+        configure(&webview);
+        report_failures(&webview);
+        downloads::download_unsupported_responses(&webview);
+        media_support::report_on_first_load(&webview);
+        webview
+    }
 }
 
 fn configure(webview: &WebView) {

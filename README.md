@@ -66,6 +66,10 @@ renderização feita pelo **WebKitGTK 6.0**. Toda a aplicação ao redor da engi
   pop-ups abertos sem interação do usuário são bloqueados.
 - Falhas de carregamento exibem a página de erro do WebKit e são registradas no
   `stderr`, sem derrubar a aplicação.
+- Limite de memória por processo web: cada página pode usar até 2 GiB. Ao
+  passar de cerca de 676 MiB (33%), o WebKit começa a liberar memória não
+  essencial e, a partir de 1 GiB (50%), também a essencial. Nenhuma página é
+  encerrada por excesso de memória.
 - Na primeira página carregada, o navegador pergunta ao WebKit se consegue
   reproduzir os formatos de mídia essenciais da web (VP9, H.264, Opus, AAC) e
   avisa no `stderr` quais plugins do GStreamer instalar se faltar algum.
@@ -203,6 +207,7 @@ src/
 │   │   ├── youtube.rs   injeção do scriptlet de anúncios do player do YouTube
 │   │   ├── youtube.js   scriptlet: remove adPlacements/adSlots/playerAds
 │   │   └── extra_rules.json regras cosméticas próprias (cards patrocinados do YouTube)
+│   ├── context.rs       WebContext dos WebViews com o limite de memória por processo
 │   ├── downloads.rs     downloads: política de resposta e destino do arquivo
 │   ├── download_name.rs nome de destino único e seguro na pasta de downloads
 │   ├── inspector.rs     Web Inspector: habilitar e abrir/fechar na aba ativa
@@ -211,7 +216,7 @@ src/
 │   ├── mode.rs          BrowsingMode: sessão de rede e gravação de histórico
 │   ├── navigation.rs    abrir endereço digitado e ir para a página inicial
 │   ├── session.rs       cookies da sessão padrão persistidos em SQLite
-│   └── webview.rs       criação do WebView e registro de falhas reais
+│   └── webview.rs       WebViewFactory: criação e configuração dos WebViews
 ├── ui/
 │   ├── adblock.rs       ação "Bloquear anúncios" com estado persistido
 │   ├── actions/
