@@ -1,14 +1,13 @@
 use gtk::prelude::*;
 use gtk::{Notebook, glib};
-use webkit6::NetworkSession;
+use webkit6::{NetworkSession, UserContentManager};
 
 use super::Tabs;
-use crate::browser::engine::WebEngine;
 
 pub struct WeakTabs {
     notebook: glib::WeakRef<Notebook>,
     session: glib::WeakRef<NetworkSession>,
-    engine: WebEngine,
+    content: glib::WeakRef<UserContentManager>,
 }
 
 impl glib::clone::Downgrade for Tabs {
@@ -18,7 +17,7 @@ impl glib::clone::Downgrade for Tabs {
         WeakTabs {
             notebook: ObjectExt::downgrade(&self.notebook),
             session: ObjectExt::downgrade(&self.session),
-            engine: self.engine.clone(),
+            content: ObjectExt::downgrade(&self.content),
         }
     }
 }
@@ -30,7 +29,7 @@ impl glib::clone::Upgrade for WeakTabs {
         Some(Tabs {
             notebook: self.notebook.upgrade()?,
             session: self.session.upgrade()?,
-            engine: self.engine.clone(),
+            content: self.content.upgrade()?,
         })
     }
 }

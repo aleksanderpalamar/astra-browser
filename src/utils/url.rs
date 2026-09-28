@@ -2,7 +2,7 @@ use percent_encoding::{AsciiSet, NON_ALPHANUMERIC, utf8_percent_encode};
 use url::{Host, Url};
 
 const SEARCH_ENDPOINT: &str = "https://duckduckgo.com/?q=";
-const EXPLICIT_SCHEMES: [&str; 5] = ["http", "https", "file", "about", "webkit"];
+const EXPLICIT_SCHEMES: [&str; 4] = ["http", "https", "file", "about"];
 const QUERY_COMPONENT: &AsciiSet = &NON_ALPHANUMERIC
     .remove(b'-')
     .remove(b'.')
@@ -102,11 +102,6 @@ mod tests {
     fn keeps_other_supported_schemes_intact() {
         assert_eq!(resolve("about:blank"), "about:blank");
         assert_eq!(resolve("file:///etc/hosts"), "file:///etc/hosts");
-    }
-
-    #[test]
-    fn opens_webkit_diagnostic_pages() {
-        assert_eq!(resolve("webkit://gpu"), "webkit://gpu");
     }
 
     #[test]

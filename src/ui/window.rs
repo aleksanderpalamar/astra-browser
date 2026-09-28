@@ -2,8 +2,8 @@ use std::rc::Rc;
 
 use gtk::prelude::*;
 use gtk::{Application, ApplicationWindow, Box as GtkBox, Image, Label, Orientation, glib};
+use webkit6::UserContentManager;
 
-use crate::browser::engine::WebEngine;
 use crate::browser::mode::BrowsingMode;
 use crate::browser::navigation::HOME_URI;
 use crate::library::Library;
@@ -18,12 +18,17 @@ const BADGE_SPACING: i32 = 4;
 const PRIVATE_TOOLTIP: &str =
     "Navegação privada: histórico, cookies e cache desta janela não são guardados";
 
-pub fn build(app: &Application, library: &Library, engine: &WebEngine, mode: BrowsingMode) {
+pub fn build(
+    app: &Application,
+    library: &Library,
+    content: &UserContentManager,
+    mode: BrowsingMode,
+) {
     let Some(session) = mode.network_session() else {
         eprintln!("Sessão de rede indisponível; a janela não foi aberta");
         return;
     };
-    let tabs = Tabs::new(session, engine.clone());
+    let tabs = Tabs::new(session, content.clone());
     let toolbar = Toolbar::new();
     let window = ApplicationWindow::builder()
         .application(app)
