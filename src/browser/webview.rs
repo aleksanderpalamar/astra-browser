@@ -2,7 +2,7 @@ use gtk::glib;
 use webkit6::prelude::*;
 use webkit6::{NetworkError, NetworkSession, PolicyError, UserContentManager, WebView};
 
-use crate::browser::{downloads, media_support};
+use crate::browser::{crash, downloads, media_support};
 
 pub fn create(session: &NetworkSession, content: &UserContentManager) -> WebView {
     let webview = WebView::builder()
@@ -13,6 +13,7 @@ pub fn create(session: &NetworkSession, content: &UserContentManager) -> WebView
         .build();
     configure(&webview);
     report_failures(&webview);
+    crash::recover_on_termination(&webview);
     downloads::download_unsupported_responses(&webview);
     media_support::report_on_first_load(&webview);
     webview
@@ -35,10 +36,6 @@ fn report_failures(webview: &WebView) {
             eprintln!("Falha ao carregar {uri}: {error}");
         }
         false
-    });
-    webview.connect_web_process_terminated(|webview, reason| {
-        let uri = webview.uri().unwrap_or_default();
-        eprintln!("Processo web encerrado ({reason:?}) em {uri}");
     });
 }
 

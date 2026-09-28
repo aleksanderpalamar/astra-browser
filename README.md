@@ -66,6 +66,11 @@ renderização feita pelo **WebKitGTK 6.0**. Toda a aplicação ao redor da engi
   pop-ups abertos sem interação do usuário são bloqueados.
 - Falhas de carregamento exibem a página de erro do WebKit e são registradas no
   `stderr`, sem derrubar a aplicação.
+- Recuperação de travamentos: se o processo web de uma aba travar, o Astra
+  recarrega a página uma vez automaticamente. Se a mesma página travar de novo,
+  ou se o WebKit a encerrar por excesso de memória, a aba mostra "A página
+  falhou" com o botão Recarregar, sem novas tentativas automáticas (evitando um
+  loop de travamentos). O encerramento continua registrado no `stderr`.
 - Na primeira página carregada, o navegador pergunta ao WebKit se consegue
   reproduzir os formatos de mídia essenciais da web (VP9, H.264, Opus, AAC) e
   avisa no `stderr` quais plugins do GStreamer instalar se faltar algum.
@@ -203,6 +208,11 @@ src/
 │   │   ├── youtube.rs   injeção do scriptlet de anúncios do player do YouTube
 │   │   ├── youtube.js   scriptlet: remove adPlacements/adSlots/playerAds
 │   │   └── extra_rules.json regras cosméticas próprias (cards patrocinados do YouTube)
+│   ├── crash/
+│   │   ├── mod.rs       recuperação quando o processo web da aba encerra
+│   │   ├── policy.rs    decisão: recarregar uma vez, página de falha ou desistir
+│   │   ├── page.rs      página "A página falhou" com o botão Recarregar
+│   │   └── failure.html modelo da página de falha
 │   ├── downloads.rs     downloads: política de resposta e destino do arquivo
 │   ├── download_name.rs nome de destino único e seguro na pasta de downloads
 │   ├── inspector.rs     Web Inspector: habilitar e abrir/fechar na aba ativa
@@ -266,8 +276,9 @@ src/
 - **Regras de domínio puras e testadas:** a resolução de endereço (`utils/url.rs`,
   usando as crates `url` e `percent-encoding`), os títulos (`ui/title.rs`), a
   ordem das abas (`ui/tabs/order.rs`), as regras de favoritos e histórico
-  (`library/`) e o nome de destino dos downloads (`browser/download_name.rs`)
-  são determinísticos e têm testes unitários.
+  (`library/`), o nome de destino dos downloads (`browser/download_name.rs`) e
+  a política de recuperação de travamentos (`browser/crash/policy.rs`) são
+  determinísticos e têm testes unitários.
 
 Os cookies da navegação normal são gravados em
 `~/.local/share/astra-browser/cookies.sqlite`, o que mantém os logins dos sites
@@ -324,5 +335,3 @@ diretório (data, endereço e título), limitado às 5 000 visitas mais recentes
 - O botão Recarregar não vira "Parar" durante o carregamento.
 - Se a URL da página mudar enquanto você digita (ex.: redirecionamento), o texto
   da barra de endereço é substituído.
-- Se o processo web do WebKit encerrar, o erro é registrado no `stderr` e a
-  página fica em branco até recarregar.
