@@ -9,5 +9,6 @@ pub mod media_support;
 pub mod memory_mode;
 pub mod mode;
 pub mod navigation;
+pub mod popup;
 pub mod session;
 pub mod webview;
