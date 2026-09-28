@@ -91,12 +91,14 @@ renderização feita pelo **WebKitGTK 6.0**. Toda a aplicação ao redor da engi
 ## Instalação das dependências no Arch Linux
 
 ```bash
-sudo pacman -S --needed webkitgtk-6.0 gtk4 gst-plugins-good gst-plugins-bad gst-libav base-devel rustup
+sudo pacman -S --needed webkitgtk-6.0 gtk4 gst-plugins-good gst-plugins-bad gst-libav gst-plugin-va base-devel rustup
 rustup default stable
 ```
 
 O WebKitGTK decodifica áudio e vídeo pelo GStreamer, e o pacote `webkitgtk-6.0`
-traz esses plugins apenas como dependências opcionais. Sem o `gst-plugins-bad`
+traz esses plugins apenas como dependências opcionais. O `gst-plugin-va` faz os
+vídeos serem decodificados pela GPU (VA-API) em placas AMD e Intel; sem ele, a
+decodificação fica na CPU. Sem o `gst-plugins-bad`
 (parser Opus, AAC, H.264) e o `gst-libav`, o YouTube mostra
 "Não é possível tocar este vídeo no seu navegador".
 
