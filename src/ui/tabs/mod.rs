@@ -1,5 +1,6 @@
 mod label;
 mod order;
+mod popups;
 mod watch;
 mod weak;
 
@@ -48,18 +49,7 @@ impl Tabs {
 
     pub fn open(&self, uri: &str) {
         let webview = self.webviews.create(&self.session);
-        let label = TabLabel::new(&webview);
-        label.connect_close(glib::clone!(
-            #[weak(rename_to = tabs)]
-            self,
-            #[weak]
-            webview,
-            move || tabs.close(&webview)
-        ));
-        self.open_popups_in_new_tabs(&webview);
-        let page = self.notebook.append_page(&webview, Some(label.widget()));
-        self.notebook.set_tab_reorderable(&webview, true);
-        self.notebook.set_current_page(Some(page));
+        self.add(&webview);
         webview.load_uri(uri);
     }
 
@@ -125,21 +115,25 @@ impl Tabs {
         });
     }
 
-    fn open_popups_in_new_tabs(&self, webview: &WebView) {
-        webview.connect_create(glib::clone!(
+    fn add(&self, webview: &WebView) {
+        let label = TabLabel::new(webview);
+        label.connect_close(glib::clone!(
             #[weak(rename_to = tabs)]
             self,
-            #[upgrade_or_default]
-            move |_, action| {
-                if !action.is_user_gesture() {
-                    return None;
-                }
-                if let Some(uri) = action.request().and_then(|request| request.uri()) {
-                    tabs.open(&uri);
-                }
-                None
-            }
+            #[weak]
+            webview,
+            move || tabs.close(&webview)
         ));
+        self.open_popups(webview);
+        let page = self.notebook.append_page(webview, Some(label.widget()));
+        self.notebook.set_tab_reorderable(webview, true);
+        self.notebook.set_current_page(Some(page));
+    }
+
+    fn show(&self, webview: &WebView) {
+        if let Some(page) = self.notebook.page_num(webview) {
+            self.notebook.set_current_page(Some(page));
+        }
     }
 }
 

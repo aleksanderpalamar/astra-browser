@@ -37,12 +37,28 @@ impl WebViewFactory {
             .hexpand(true)
             .vexpand(true)
             .build();
-        report_failures(&webview);
-        crash::recover_on_termination(&webview);
-        downloads::download_unsupported_responses(&webview);
-        media_support::report_on_first_load(&webview);
+        install_behaviour(&webview);
         webview
     }
+
+    pub fn create_related(&self, opener: &WebView) -> WebView {
+        let webview = WebView::builder()
+            .related_view(opener)
+            .user_content_manager(&self.content)
+            .settings(&self.settings)
+            .hexpand(true)
+            .vexpand(true)
+            .build();
+        install_behaviour(&webview);
+        webview
+    }
+}
+
+fn install_behaviour(webview: &WebView) {
+    report_failures(webview);
+    crash::recover_on_termination(webview);
+    downloads::download_unsupported_responses(webview);
+    media_support::report_on_first_load(webview);
 }
 
 fn shared_settings() -> Settings {

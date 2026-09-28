@@ -78,8 +78,12 @@ renderização feita pelo **WebKitGTK 6.0**. Toda a aplicação ao redor da engi
   Inspector do WebKit na aba ativa — Elements, Console, Sources, Network,
   Storage e demais painéis. O menu de contexto da página também passa a
   oferecer "Inspecionar elemento".
-- Links que pedem nova janela (`target="_blank"`) abrem em uma nova aba;
-  pop-ups abertos sem interação do usuário são bloqueados.
+- Pop-ups: links com `target="_blank"` e `window.open` abrem em uma nova aba
+  vinculada à página de origem (`window.opener`, como os logins OAuth exigem).
+  Quando o site pede um tamanho (`width`/`height`), o pop-up abre em uma janela
+  própria desse tamanho, com o endereço visível e só para leitura. Quando o site
+  fecha o pop-up (`window.close()`), a aba ou janela fecha e o Astra volta para
+  a aba de origem. Pop-ups abertos sem interação do usuário são bloqueados.
 - Falhas de carregamento exibem a página de erro do WebKit e são registradas no
   `stderr`, sem derrubar a aplicação.
 - Recuperação de travamentos: se o processo web de uma aba travar, o Astra
@@ -242,6 +246,7 @@ src/
 │   ├── memory_mode.rs   MemoryMode: modelo de cache e cache de páginas de cada modo
 │   ├── mode.rs          BrowsingMode: sessão de rede e gravação de histórico
 │   ├── navigation.rs    abrir endereço digitado e ir para a página inicial
+│   ├── popup.rs         decisão entre aba e janela para cada pop-up
 │   ├── session.rs       cookies da sessão padrão persistidos em SQLite
 │   └── webview.rs       WebViewFactory: criação dos WebViews com configurações compartilhadas
 ├── ui/
@@ -262,11 +267,13 @@ src/
 │   ├── low_memory.rs    ação "Baixo consumo de memória" com estado persistido
 │   ├── menu.rs          menu principal
 │   ├── permissions/     pergunta de permissão para microfone e câmera
+│   ├── popup_window.rs  janela de pop-up com o endereço só para leitura
 │   ├── preferences.rs   janela de Configurações
 │   ├── tabs/
-│   │   ├── mod.rs       Tabs: abrir, fechar, selecionar e pop-ups em nova aba
+│   │   ├── mod.rs       Tabs: abrir, fechar e selecionar abas
 │   │   ├── label.rs     rótulo da aba (título + botão fechar)
 │   │   ├── order.rs     navegação circular entre abas
+│   │   ├── popups.rs    pop-ups vinculados à origem: aba ou janela e fechamento pelo site
 │   │   ├── weak.rs      referência fraca às abas para as closures
 │   │   └── watch.rs     observação de propriedades da aba ativa
 │   ├── sync.rs          aba ativa → endereço, título, spinner, voltar/avançar
@@ -302,10 +309,10 @@ src/
 - **Regras de domínio puras e testadas:** a resolução de endereço (`utils/url/`,
   usando as crates `url` e `percent-encoding`), os títulos (`ui/title.rs`), a
   ordem das abas (`ui/tabs/order.rs`), as regras de favoritos e histórico
-  (`library/`), o nome de destino dos downloads (`browser/download_name.rs`) e
-  a política de recuperação de travamentos (`browser/crash/policy.rs`) e os
-  modos de memória (`browser/memory_mode.rs`) são determinísticos e têm testes
-  unitários.
+  (`library/`), o nome de destino dos downloads (`browser/download_name.rs`),
+  a política de recuperação de travamentos (`browser/crash/policy.rs`), os
+  modos de memória (`browser/memory_mode.rs`) e a apresentação dos pop-ups
+  (`browser/popup.rs`) são determinísticos e têm testes unitários.
 
 Os cookies da navegação normal são gravados em
 `~/.local/share/astra-browser/cookies.sqlite`, o que mantém os logins dos sites
@@ -359,8 +366,9 @@ diretório (data, endereço e título), limitado às 5 000 visitas mais recentes
 - Uma palavra sem ponto só vira endereço quando tem porta, caminho ou barra
   final: `intranet` sozinho vira pesquisa (use `intranet/`), e textos com barra
   como `km/h` ou `tcp/ip` abrem como endereço em vez de pesquisa.
-- Pop-ups legítimos (ex.: login OAuth) abrem em uma nova aba sem vínculo com a
-  página de origem (`window.opener`).
+- O WebKitGTK informa só o tamanho pedido para um pop-up: um `window.open` que
+  peça exatamente o tamanho padrão da janela (1280×800) abre em aba. Nas janelas
+  de pop-up, pedidos de microfone e câmera são negados.
 - O botão Recarregar não vira "Parar" durante o carregamento.
 - Se a URL da página mudar enquanto você digita (ex.: redirecionamento), o texto
   da barra de endereço é substituído.

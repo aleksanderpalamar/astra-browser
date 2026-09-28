@@ -8,6 +8,7 @@ pub mod library;
 pub mod low_memory;
 pub mod menu;
 pub mod permissions;
+pub mod popup_window;
 pub mod preferences;
 pub mod sync;
 pub mod tabs;
