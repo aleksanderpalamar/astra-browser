@@ -4,6 +4,7 @@ pub const FILTER_URL: &str =
 pub const TIMESTAMP_FILE: &str = "easylist.updated";
 pub const EXTRA_FILTER_ID: &str = "astra-extra";
 pub const EXTRA_RULES: &str = include_str!("extra_rules.json");
+pub const EXTRA_RULES_SOURCE_FILE: &str = "astra-extra.json";
 
 const UPDATE_INTERVAL_SECS: u64 = 7 * 24 * 60 * 60;
 
@@ -15,9 +16,15 @@ pub fn parse_timestamp(contents: &str) -> Option<u64> {
     contents.trim().parse().ok()
 }
 
+pub fn is_current_extra_rules(compiled_source: &str) -> bool {
+    compiled_source == EXTRA_RULES
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{UPDATE_INTERVAL_SECS, needs_update, parse_timestamp};
+    use super::{
+        EXTRA_RULES, UPDATE_INTERVAL_SECS, is_current_extra_rules, needs_update, parse_timestamp,
+    };
 
     const NOW: u64 = 1_800_000_000;
 
@@ -58,6 +65,20 @@ mod tests {
     fn extra_rules_cover_current_youtube_ad_slots() {
         assert!(super::EXTRA_RULES.contains("ytd-ad-slot-renderer"));
         assert!(super::EXTRA_RULES.contains("#player-ads"));
+    }
+
+    #[test]
+    fn compiled_extra_rules_are_reused_while_unchanged() {
+        assert!(is_current_extra_rules(EXTRA_RULES));
+    }
+
+    #[test]
+    fn missing_or_outdated_extra_rules_are_recompiled() {
+        assert!(!is_current_extra_rules(""));
+        assert!(!is_current_extra_rules("[]"));
+        assert!(!is_current_extra_rules(
+            &EXTRA_RULES.replace("#player-ads", "#outro")
+        ));
     }
 
     #[test]

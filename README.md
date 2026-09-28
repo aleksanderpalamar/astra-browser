@@ -49,7 +49,8 @@ renderização feita pelo **WebKitGTK 6.0**. Toda a aplicação ao redor da engi
   compilada uma vez e atualizada semanalmente. No YouTube, onde os anúncios de
   vídeo vêm do mesmo servidor que o conteúdo, um *scriptlet* remove os anúncios
   do JSON do player (como o uBlock Origin faz) e regras próprias do Astra
-  escondem os cards patrocinados. O bloqueador é ligado/desligado em
+  escondem os cards patrocinados; essas regras são compiladas uma vez e só
+  recompiladas quando mudam em uma nova versão do Astra. O bloqueador é ligado/desligado em
   Configurações (a escolha é lembrada; recarregue a página para ver o efeito).
 - Configurações: janela nativa aberta pelo menu principal ou `Ctrl+,`, com as
   seções "Privacidade e segurança" (interruptor "Bloquear anúncios") e
@@ -212,7 +213,7 @@ src/
 ├── browser/
 │   ├── adblock/
 │   │   ├── mod.rs       AdBlocker: carrega do cache, baixa, compila e aplica
-│   │   ├── filters.rs   fonte da lista e regra de atualização semanal
+│   │   ├── filters.rs   fonte da lista, atualização semanal e reuso das regras extras
 │   │   ├── download.rs  download da lista (libsoup)
 │   │   ├── sanitize.rs  correção de padrões defeituosos da lista
 │   │   ├── youtube.rs   injeção do scriptlet de anúncios do player do YouTube

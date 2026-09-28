@@ -18,6 +18,7 @@ pub struct AdBlocker {
     content: UserContentManager,
     store: UserContentFilterStore,
     timestamp: PathBuf,
+    extra_source: PathBuf,
     player_ads: UserScript,
     enabled: Rc<Cell<bool>>,
 }
@@ -28,6 +29,7 @@ impl AdBlocker {
             content: UserContentManager::new(),
             store: UserContentFilterStore::new(&directory.to_string_lossy()),
             timestamp: directory.join(filters::TIMESTAMP_FILE),
+            extra_source: directory.join(filters::EXTRA_RULES_SOURCE_FILE),
             player_ads: youtube::player_ads_script(),
             enabled: Rc::new(Cell::new(false)),
         }
@@ -82,16 +84,40 @@ impl AdBlocker {
     }
 
     async fn install_extra_rules(&self) {
+        match self.compiled_extra_rules().await {
+            Some(filter) => self.install(&filter),
+            None => self.compile_extra_rules().await,
+        }
+    }
+
+    async fn compiled_extra_rules(&self) -> Option<UserContentFilter> {
+        let compiled_source = files::read_or_empty(&self.extra_source).ok()?;
+        if !filters::is_current_extra_rules(&compiled_source) {
+            return None;
+        }
+        self.store.load_future(filters::EXTRA_FILTER_ID).await.ok()
+    }
+
+    async fn compile_extra_rules(&self) {
         let rules = glib::Bytes::from_static(filters::EXTRA_RULES.as_bytes());
         match self
             .store
             .save_future(filters::EXTRA_FILTER_ID, &rules)
             .await
         {
-            Ok(filter) => self.install(&filter),
+            Ok(filter) => {
+                self.install(&filter);
+                self.record_extra_rules();
+            }
             Err(error) => {
                 eprintln!("Não foi possível compilar as regras extras de bloqueio: {error}")
             }
+        }
+    }
+
+    fn record_extra_rules(&self) {
+        if let Err(error) = files::write_atomically(&self.extra_source, filters::EXTRA_RULES) {
+            eprintln!("Não foi possível registrar as regras extras compiladas: {error}");
         }
     }
 
