@@ -5,7 +5,21 @@ use gtk::glib::{KeyFile, KeyFileFlags};
 use crate::library::files;
 
 const GROUP: &str = "navegacao";
-const ADBLOCK_KEY: &str = "bloquear-anuncios";
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Toggle {
+    AdBlock,
+    HardwareAcceleration,
+}
+
+impl Toggle {
+    fn key(self) -> &'static str {
+        match self {
+            Self::AdBlock => "bloquear-anuncios",
+            Self::HardwareAcceleration => "aceleracao-hardware",
+        }
+    }
+}
 
 pub struct Preferences {
     path: PathBuf,
@@ -16,12 +30,12 @@ impl Preferences {
         Self { path }
     }
 
-    pub fn adblock_enabled(&self) -> bool {
-        adblock_enabled(&self.read())
+    pub fn enabled(&self, toggle: Toggle) -> bool {
+        enabled(&self.read(), toggle)
     }
 
-    pub fn set_adblock_enabled(&self, enabled: bool) {
-        let contents = with_adblock(&self.read(), enabled);
+    pub fn set_enabled(&self, toggle: Toggle, value: bool) {
+        let contents = with_toggle(&self.read(), toggle, value);
         if let Err(error) = files::write_atomically(&self.path, &contents) {
             eprintln!(
                 "Não foi possível salvar as preferências em {}: {error}",
@@ -41,13 +55,13 @@ impl Preferences {
     }
 }
 
-fn adblock_enabled(contents: &str) -> bool {
-    parse(contents).boolean(GROUP, ADBLOCK_KEY).unwrap_or(true)
+fn enabled(contents: &str, toggle: Toggle) -> bool {
+    parse(contents).boolean(GROUP, toggle.key()).unwrap_or(true)
 }
 
-fn with_adblock(contents: &str, enabled: bool) -> String {
+fn with_toggle(contents: &str, toggle: Toggle, value: bool) -> String {
     let keys = parse(contents);
-    keys.set_boolean(GROUP, ADBLOCK_KEY, enabled);
+    keys.set_boolean(GROUP, toggle.key(), value);
     keys.to_data().to_string()
 }
 
@@ -63,30 +77,49 @@ fn parse(contents: &str) -> KeyFile {
 
 #[cfg(test)]
 mod tests {
-    use super::{adblock_enabled, with_adblock};
+    use super::{Toggle, enabled, with_toggle};
 
     #[test]
-    fn adblock_is_enabled_by_default() {
-        assert!(adblock_enabled(""));
-        assert!(adblock_enabled("[outro]\nchave=1\n"));
+    fn toggles_are_enabled_by_default() {
+        assert!(enabled("", Toggle::AdBlock));
+        assert!(enabled("", Toggle::HardwareAcceleration));
+        assert!(enabled("[outro]\nchave=1\n", Toggle::AdBlock));
     }
 
     #[test]
-    fn remembers_disabled_adblock() {
-        let contents = with_adblock("", false);
-        assert!(!adblock_enabled(&contents));
-        assert!(adblock_enabled(&with_adblock(&contents, true)));
+    fn remembers_disabled_toggles() {
+        let contents = with_toggle("", Toggle::AdBlock, false);
+        assert!(!enabled(&contents, Toggle::AdBlock));
+        assert!(enabled(
+            &with_toggle(&contents, Toggle::AdBlock, true),
+            Toggle::AdBlock
+        ));
+    }
+
+    #[test]
+    fn toggles_are_independent() {
+        let contents = with_toggle("", Toggle::HardwareAcceleration, false);
+        assert!(!enabled(&contents, Toggle::HardwareAcceleration));
+        assert!(enabled(&contents, Toggle::AdBlock));
     }
 
     #[test]
     fn keeps_unrelated_settings() {
-        let contents = with_adblock("[outro]\nchave=valor\n", false);
+        let contents = with_toggle("[outro]\nchave=valor\n", Toggle::AdBlock, false);
         assert!(contents.contains("chave=valor"));
-        assert!(!adblock_enabled(&contents));
+        assert!(!enabled(&contents, Toggle::AdBlock));
+    }
+
+    #[test]
+    fn existing_adblock_choice_is_still_read() {
+        assert!(!enabled(
+            "[navegacao]\nbloquear-anuncios=false\n",
+            Toggle::AdBlock
+        ));
     }
 
     #[test]
     fn invalid_files_fall_back_to_defaults() {
-        assert!(adblock_enabled("isto não é ini"));
+        assert!(enabled("isto não é ini", Toggle::AdBlock));
     }
 }

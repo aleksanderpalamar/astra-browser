@@ -15,10 +15,11 @@ pub enum BrowserAction {
     NextTab,
     PreviousTab,
     ToggleInspector,
+    OpenInNewTab,
 }
 
 impl BrowserAction {
-    pub const ALL: [Self; 11] = [
+    pub const ALL: [Self; 12] = [
         Self::Back,
         Self::Forward,
         Self::Reload,
@@ -30,6 +31,7 @@ impl BrowserAction {
         Self::NextTab,
         Self::PreviousTab,
         Self::ToggleInspector,
+        Self::OpenInNewTab,
     ];
 
     pub(super) fn depends_on_history(self) -> bool {
@@ -53,6 +55,7 @@ impl ActionSpec for BrowserAction {
             Self::NextTab => "next-tab",
             Self::PreviousTab => "previous-tab",
             Self::ToggleInspector => "toggle-inspector",
+            Self::OpenInNewTab => "open-in-new-tab",
         }
     }
 
@@ -69,12 +72,13 @@ impl ActionSpec for BrowserAction {
             Self::NextTab => &["<Control>Tab", "<Control>Page_Down"],
             Self::PreviousTab => &["<Control><Shift>Tab", "<Control>Page_Up"],
             Self::ToggleInspector => &["F12", "<Control><Shift>i"],
+            Self::OpenInNewTab => &[],
         }
     }
 
     fn parameter_type(self) -> Option<&'static glib::VariantTy> {
         match self {
-            Self::OpenAddress => Some(glib::VariantTy::STRING),
+            Self::OpenAddress | Self::OpenInNewTab => Some(glib::VariantTy::STRING),
             _ => None,
         }
     }
@@ -142,9 +146,12 @@ mod tests {
     }
 
     #[test]
-    fn only_open_address_takes_a_parameter() {
+    fn only_address_actions_take_a_parameter() {
         for action in BrowserAction::ALL {
-            let expects_parameter = action == BrowserAction::OpenAddress;
+            let expects_parameter = matches!(
+                action,
+                BrowserAction::OpenAddress | BrowserAction::OpenInNewTab
+            );
             assert_eq!(action.parameter_type().is_some(), expects_parameter);
         }
     }

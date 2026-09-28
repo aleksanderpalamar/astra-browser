@@ -7,6 +7,7 @@ use crate::browser::inspector;
 use crate::browser::navigation::{self, HOME_URI};
 use crate::ui::tabs::{Direction, Tabs};
 use crate::ui::toolbar::Toolbar;
+use crate::utils::url::resolve_address;
 
 #[derive(Clone)]
 pub struct BackForwardActions {
@@ -40,6 +41,7 @@ impl Handler {
             BrowserAction::NextTab => self.tabs.select(Direction::Next),
             BrowserAction::PreviousTab => self.tabs.select(Direction::Previous),
             BrowserAction::ToggleInspector => self.with_current(inspector::toggle),
+            BrowserAction::OpenInNewTab => self.open_in_new_tab(parameter),
         }
     }
 
@@ -52,6 +54,15 @@ impl Handler {
     fn open_address(&self, parameter: Option<&glib::Variant>) {
         if let Some(input) = parameter.and_then(glib::Variant::str) {
             self.with_current(|webview| navigation::open(webview, input));
+        }
+    }
+
+    fn open_in_new_tab(&self, parameter: Option<&glib::Variant>) {
+        if let Some(uri) = parameter
+            .and_then(glib::Variant::str)
+            .and_then(resolve_address)
+        {
+            self.tabs.open(&uri);
         }
     }
 
