@@ -25,7 +25,7 @@ pub fn scope(url: &Url, input: &str) -> Option<HostScope> {
         return None;
     }
     match url.host()? {
-        Host::Domain(domain) => domain_scope(domain),
+        Host::Domain(domain) => domain_scope(domain, input),
         Host::Ipv4(address) => url
             .host_str()
             .is_some_and(|host| input.starts_with(host))
@@ -34,11 +34,18 @@ pub fn scope(url: &Url, input: &str) -> Option<HostScope> {
     }
 }
 
-fn domain_scope(domain: &str) -> Option<HostScope> {
+fn domain_scope(domain: &str, input: &str) -> Option<HostScope> {
     if is_local_name(domain) {
         return Some(HostScope::Local);
     }
-    has_top_level_domain(domain).then_some(HostScope::Public)
+    if is_public_domain(domain) {
+        return Some(HostScope::Public);
+    }
+    is_written_as_address(input).then_some(HostScope::Local)
+}
+
+fn is_written_as_address(input: &str) -> bool {
+    input.contains([':', '/'])
 }
 
 fn is_local_name(domain: &str) -> bool {
@@ -55,12 +62,10 @@ fn is_subdomain_of(domain: &str, suffix: &str) -> bool {
         .is_some_and(|name| !name.is_empty())
 }
 
-fn has_top_level_domain(domain: &str) -> bool {
-    let Some((name, tld)) = domain.rsplit_once('.') else {
-        return false;
-    };
-    let is_valid_tld = tld.len() >= 2 && tld.chars().all(|c| c.is_ascii_alphabetic());
-    !name.is_empty() && (is_valid_tld || tld.starts_with("xn--"))
+fn is_public_domain(domain: &str) -> bool {
+    domain.contains('.')
+        && domain.split('.').all(|label| !label.is_empty())
+        && psl::suffix(domain.as_bytes()).is_some_and(|suffix| suffix.is_known())
 }
 
 fn ipv4_scope(address: Ipv4Addr) -> HostScope {
@@ -92,7 +97,7 @@ fn ipv6_scope(address: Ipv6Addr) -> HostScope {
 
 #[cfg(test)]
 mod tests {
-    use super::{HostScope, is_local_name};
+    use super::{HostScope, is_local_name, is_public_domain, is_written_as_address};
 
     #[test]
     fn local_hosts_use_http_and_public_hosts_use_https() {
@@ -113,6 +118,37 @@ mod tests {
         ] {
             assert!(is_local_name(name), "{name}");
         }
+    }
+
+    #[test]
+    fn public_domains_need_a_known_suffix() {
+        for domain in [
+            "github.com",
+            "exemplo.com.br",
+            "gov.br",
+            "pt.wikipedia.org",
+            "xn--e1afmkfd.xn--p1ai",
+        ] {
+            assert!(is_public_domain(domain), "{domain}");
+        }
+        for domain in [
+            "astra.ownership",
+            "index.html",
+            "intranet",
+            "github.com.",
+            ".com",
+            "a..com",
+        ] {
+            assert!(!is_public_domain(domain), "{domain}");
+        }
+    }
+
+    #[test]
+    fn port_path_or_trailing_slash_mark_an_address() {
+        assert!(is_written_as_address("intranet:8080"));
+        assert!(is_written_as_address("intranet/"));
+        assert!(is_written_as_address("nas/admin"));
+        assert!(!is_written_as_address("intranet"));
     }
 
     #[test]

@@ -20,6 +20,12 @@ renderização feita pelo **WebKitGTK 6.0**. Toda a aplicação ao redor da engi
   - endereços locais usam HTTP: `localhost:3000` → `http://localhost:3000`
     (também `127.0.0.1`, IPs de rede privada como `192.168.0.10`, IPv6 local
     e nomes `.localhost`, `.local`, `.lan`, `.internal`, `.home.arpa` e `.test`)
+  - só vira domínio o que termina em um sufixo conhecido da
+    [Public Suffix List](https://publicsuffix.org/) (`.com`, `.com.br`, `.dev`,
+    `.рф`...): `astra.ownership` e `index.html` viram pesquisa
+  - uma palavra sem ponto vira endereço HTTP quando escrita como endereço, com
+    porta, caminho ou barra final: `intranet:8080`, `intranet/`, `nas/admin`;
+    `intranet` sozinho continua sendo pesquisa
   - URLs com `http://` ou `https://` são mantidas intactas
   - texto comum vira pesquisa: `Rust ownership` → `https://duckduckgo.com/?q=Rust%20ownership`
 - Botões Voltar/Avançar habilitados somente quando existe histórico.
@@ -271,7 +277,7 @@ src/
     ├── clock.rs         horário atual em segundos Unix
     └── url/
         ├── mod.rs       resolução da entrada: URL explícita, endereço ou pesquisa
-        ├── host.rs      host local (HTTP) ou público (HTTPS)
+        ├── host.rs      host local (HTTP), público (HTTPS) ou pesquisa
         └── tests.rs     casos da resolução de endereços
 ```
 
@@ -318,6 +324,7 @@ diretório (data, endereço e título), limitado às 5 000 visitas mais recentes
 - [WebKitGTK 6.0](https://webkitgtk.org/) via [`webkit6`](https://crates.io/crates/webkit6) 0.6
 - [`url`](https://crates.io/crates/url) 2.5 — parsing de URL (padrão WHATWG)
 - [`percent-encoding`](https://crates.io/crates/percent-encoding) 2.3 — codificação da pesquisa
+- [`psl`](https://crates.io/crates/psl) 2.1 — Public Suffix List para reconhecer domínios
 - [`serde_json`](https://crates.io/crates/serde_json) 1.0 — correção da lista de bloqueio antes de compilar
 - [EasyList](https://easylist.to/) — lista de filtros de anúncios (GPLv3 / CC BY-SA 3.0), baixada em tempo de execução
 
@@ -349,8 +356,9 @@ diretório (data, endereço e título), limitado às 5 000 visitas mais recentes
 - A lista de downloads vale só para a sessão atual (não é persistida).
 - Domínios públicos sem esquema recebem `https://`; sites públicos que só
   atendem em HTTP precisam de `http://` explícito.
-- A detecção de domínio é heurística: nomes de host sem ponto (ex.: `intranet`)
-  viram pesquisa, e textos como `rust.ownership` são tratados como domínio.
+- Uma palavra sem ponto só vira endereço quando tem porta, caminho ou barra
+  final: `intranet` sozinho vira pesquisa (use `intranet/`), e textos com barra
+  como `km/h` ou `tcp/ip` abrem como endereço em vez de pesquisa.
 - Pop-ups legítimos (ex.: login OAuth) abrem em uma nova aba sem vínculo com a
   página de origem (`window.opener`).
 - O botão Recarregar não vira "Parar" durante o carregamento.
