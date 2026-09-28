@@ -23,6 +23,12 @@ const PRIVACY: [Setting; 1] = [Setting {
     action: AppAction::ToggleAdBlock,
 }];
 
+const PERFORMANCE: [Setting; 1] = [Setting {
+    title: "Baixo consumo de memória",
+    description: "Usa caches menores, não guarda páginas para Voltar e Avançar (que ficam mais lentos) e encerra os processos das abas fechadas. O encerramento dos processos vale depois de reiniciar o Astra.",
+    action: AppAction::ToggleLowMemory,
+}];
+
 pub fn show(app: &Application) {
     if let Some(window) = existing(app) {
         window.present();
@@ -32,7 +38,7 @@ pub fn show(app: &Application) {
         .application(app)
         .title("Configurações")
         .default_width(560)
-        .default_height(320)
+        .default_height(460)
         .child(&page())
         .build();
     window.set_widget_name(WINDOW_NAME);
@@ -63,6 +69,8 @@ fn page() -> GtkBox {
         .build();
     page.append(&heading("Privacidade e segurança"));
     page.append(&section(&PRIVACY));
+    page.append(&heading("Desempenho"));
+    page.append(&section(&PERFORMANCE));
     page
 }
 

@@ -6,6 +6,7 @@ pub mod downloads;
 pub mod inspector;
 pub mod media_formats;
 pub mod media_support;
+pub mod memory_mode;
 pub mod mode;
 pub mod navigation;
 pub mod session;

@@ -5,12 +5,13 @@ use gtk::{Application, ApplicationWindow, glib};
 use webkit6::NetworkSession;
 
 use crate::browser::adblock::AdBlocker;
+use crate::browser::memory_mode::MemoryMode;
 use crate::browser::mode::BrowsingMode;
 use crate::browser::webview::WebViewFactory;
 use crate::browser::{context, session};
 use crate::library::{Library, files};
 use crate::ui::actions::{self, AppAction, BrowserAction, LibraryAction, register_accels};
-use crate::ui::{adblock, preferences, window};
+use crate::ui::{adblock, low_memory, preferences, window};
 
 const APP_ID: &str = "io.github.aleksanderpalamar.AstraBrowser";
 const FILTERS_DIRECTORY: &str = "content-filters";
@@ -19,7 +20,11 @@ pub fn run() -> glib::ExitCode {
     let app = Application::builder().application_id(APP_ID).build();
     let library = Library::open();
     let adblocker = AdBlocker::new(&files::data_path(FILTERS_DIRECTORY));
-    let webviews = WebViewFactory::new(context::create(), adblocker.content_manager().clone());
+    let memory_mode = MemoryMode::from_low_memory(library.preferences.low_memory_enabled());
+    let webviews = WebViewFactory::new(
+        context::create(memory_mode),
+        adblocker.content_manager().clone(),
+    );
     app.connect_startup(glib::clone!(
         #[strong]
         library,
@@ -31,6 +36,7 @@ pub fn run() -> glib::ExitCode {
             gtk::Window::set_default_icon_name(APP_ID);
             persist_default_session_cookies();
             adblock::install(app, &adblocker, Rc::clone(&library.preferences));
+            low_memory::install(app, &webviews, Rc::clone(&library.preferences));
             install_app_actions(app, &library, &webviews);
             register_accelerators(app);
         }

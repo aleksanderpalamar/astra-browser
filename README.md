@@ -51,9 +51,15 @@ renderização feita pelo **WebKitGTK 6.0**. Toda a aplicação ao redor da engi
   do JSON do player (como o uBlock Origin faz) e regras próprias do Astra
   escondem os cards patrocinados. O bloqueador é ligado/desligado em
   Configurações (a escolha é lembrada; recarregue a página para ver o efeito).
-- Configurações: janela nativa aberta pelo menu principal ou `Ctrl+,`, com a
-  seção "Privacidade e segurança" (por enquanto, o interruptor "Bloquear
-  anúncios").
+- Configurações: janela nativa aberta pelo menu principal ou `Ctrl+,`, com as
+  seções "Privacidade e segurança" (interruptor "Bloquear anúncios") e
+  "Desempenho" (interruptor "Baixo consumo de memória").
+- Baixo consumo de memória (desligado por padrão): troca o modelo de cache do
+  WebKit para `DocumentBrowser` e desliga o cache de páginas de Voltar/Avançar,
+  que passam a recarregar a página. Com o modo ativo desde a abertura do Astra,
+  os processos das abas fechadas são encerrados em vez de ficarem guardados
+  para reutilização; ao ligar o interruptor com o Astra aberto, essa parte só
+  vale depois de reiniciar.
 - Microfone e câmera: quando um site pede acesso (ex.: ditado por voz), o
   Astra pergunta "*site* quer usar o seu microfone" com as opções Bloquear e
   Permitir; fechar o diálogo bloqueia. Outros pedidos de permissão continuam
@@ -199,7 +205,7 @@ src/
 │   ├── bookmark_store.rs favoritos persistidos em disco
 │   ├── history/         histórico: registro, busca e limite de visitas
 │   ├── history_store.rs histórico persistido em disco (somente acréscimo)
-│   ├── preferences.rs   preferências do usuário (bloqueador ligado/desligado)
+│   ├── preferences.rs   preferências do usuário (bloqueador e baixo consumo de memória)
 │   ├── visit.rs         visita: formato da linha e páginas registráveis
 │   ├── files.rs         caminhos de dados, gravação atômica e acréscimo
 │   └── tsv.rs           codificação das linhas dos arquivos de dados
@@ -212,7 +218,7 @@ src/
 │   │   ├── youtube.rs   injeção do scriptlet de anúncios do player do YouTube
 │   │   ├── youtube.js   scriptlet: remove adPlacements/adSlots/playerAds
 │   │   └── extra_rules.json regras cosméticas próprias (cards patrocinados do YouTube)
-│   ├── context.rs       WebContext dos WebViews com o limite de memória por processo
+│   ├── context.rs       WebContext dos WebViews: limite de memória e modelo de cache inicial
 │   ├── crash/
 │   │   ├── mod.rs       recuperação quando o processo web da aba encerra
 │   │   ├── policy.rs    decisão: recarregar uma vez, página de falha ou desistir
@@ -223,15 +229,16 @@ src/
 │   ├── inspector.rs     Web Inspector: habilitar e abrir/fechar na aba ativa
 │   ├── media_formats.rs formatos de mídia essenciais e mensagem de aviso
 │   ├── media_support.rs consulta ao WebKit sobre os formatos suportados
+│   ├── memory_mode.rs   MemoryMode: modelo de cache e cache de páginas de cada modo
 │   ├── mode.rs          BrowsingMode: sessão de rede e gravação de histórico
 │   ├── navigation.rs    abrir endereço digitado e ir para a página inicial
 │   ├── session.rs       cookies da sessão padrão persistidos em SQLite
-│   └── webview.rs       WebViewFactory: criação e configuração dos WebViews
+│   └── webview.rs       WebViewFactory: criação dos WebViews com configurações compartilhadas
 ├── ui/
 │   ├── adblock.rs       ação "Bloquear anúncios" com estado persistido
 │   ├── actions/
-│   │   ├── spec.rs      ActionSpec: contrato comum (nome, escopo, atalhos)
-│   │   ├── app.rs       AppAction: janelas, bloqueador, configurações e sair
+│   │   ├── spec.rs      ActionSpec: contrato comum e registro de ações e interruptores
+│   │   ├── app.rs       AppAction: janelas, interruptores, configurações e sair
 │   │   ├── catalog.rs   BrowserAction: navegação e abas
 │   │   ├── library.rs   LibraryAction: favoritos, histórico e downloads
 │   │   └── handler.rs   execução das ações de navegação sobre a aba ativa
@@ -242,6 +249,7 @@ src/
 │   ├── bookmarks.rs     favoritos na interface: estrela, painel e ações
 │   ├── downloads/       painel de downloads, linha com progresso e status
 │   ├── history.rs       registro das visitas e painel de histórico
+│   ├── low_memory.rs    ação "Baixo consumo de memória" com estado persistido
 │   ├── menu.rs          menu principal
 │   ├── permissions/     pergunta de permissão para microfone e câmera
 │   ├── preferences.rs   janela de Configurações
@@ -282,8 +290,9 @@ src/
   usando as crates `url` e `percent-encoding`), os títulos (`ui/title.rs`), a
   ordem das abas (`ui/tabs/order.rs`), as regras de favoritos e histórico
   (`library/`), o nome de destino dos downloads (`browser/download_name.rs`) e
-  a política de recuperação de travamentos (`browser/crash/policy.rs`) são
-  determinísticos e têm testes unitários.
+  a política de recuperação de travamentos (`browser/crash/policy.rs`) e os
+  modos de memória (`browser/memory_mode.rs`) são determinísticos e têm testes
+  unitários.
 
 Os cookies da navegação normal são gravados em
 `~/.local/share/astra-browser/cookies.sqlite`, o que mantém os logins dos sites
