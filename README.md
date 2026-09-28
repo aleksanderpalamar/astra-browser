@@ -71,6 +71,10 @@ renderização feita pelo **WebKitGTK 6.0**. Toda a aplicação ao redor da engi
   ou se o WebKit a encerrar por excesso de memória, a aba mostra "A página
   falhou" com o botão Recarregar, sem novas tentativas automáticas (evitando um
   loop de travamentos). O encerramento continua registrado no `stderr`.
+- Limite de memória por processo web: cada página pode usar até 2 GiB. Ao
+  passar de cerca de 676 MiB (33%), o WebKit começa a liberar memória não
+  essencial e, a partir de 1 GiB (50%), também a essencial. Nenhuma página é
+  encerrada por excesso de memória.
 - Na primeira página carregada, o navegador pergunta ao WebKit se consegue
   reproduzir os formatos de mídia essenciais da web (VP9, H.264, Opus, AAC) e
   avisa no `stderr` quais plugins do GStreamer instalar se faltar algum.
@@ -208,6 +212,7 @@ src/
 │   │   ├── youtube.rs   injeção do scriptlet de anúncios do player do YouTube
 │   │   ├── youtube.js   scriptlet: remove adPlacements/adSlots/playerAds
 │   │   └── extra_rules.json regras cosméticas próprias (cards patrocinados do YouTube)
+│   ├── context.rs       WebContext dos WebViews com o limite de memória por processo
 │   ├── crash/
 │   │   ├── mod.rs       recuperação quando o processo web da aba encerra
 │   │   ├── policy.rs    decisão: recarregar uma vez, página de falha ou desistir
@@ -221,7 +226,7 @@ src/
 │   ├── mode.rs          BrowsingMode: sessão de rede e gravação de histórico
 │   ├── navigation.rs    abrir endereço digitado e ir para a página inicial
 │   ├── session.rs       cookies da sessão padrão persistidos em SQLite
-│   └── webview.rs       criação do WebView e registro de falhas reais
+│   └── webview.rs       WebViewFactory: criação e configuração dos WebViews
 ├── ui/
 │   ├── adblock.rs       ação "Bloquear anúncios" com estado persistido
 │   ├── actions/
