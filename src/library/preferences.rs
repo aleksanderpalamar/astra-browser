@@ -5,7 +5,20 @@ use gtk::glib::{KeyFile, KeyFileFlags};
 use crate::library::files;
 
 const GROUP: &str = "navegacao";
-const ADBLOCK_KEY: &str = "bloquear-anuncios";
+const ADBLOCK: Toggle = Toggle {
+    key: "bloquear-anuncios",
+    default: true,
+};
+const LOW_MEMORY: Toggle = Toggle {
+    key: "baixo-consumo-memoria",
+    default: false,
+};
+
+#[derive(Clone, Copy)]
+struct Toggle {
+    key: &'static str,
+    default: bool,
+}
 
 pub struct Preferences {
     path: PathBuf,
@@ -17,17 +30,19 @@ impl Preferences {
     }
 
     pub fn adblock_enabled(&self) -> bool {
-        adblock_enabled(&self.read())
+        is_enabled(&self.read(), ADBLOCK)
     }
 
     pub fn set_adblock_enabled(&self, enabled: bool) {
-        let contents = with_adblock(&self.read(), enabled);
-        if let Err(error) = files::write_atomically(&self.path, &contents) {
-            eprintln!(
-                "Não foi possível salvar as preferências em {}: {error}",
-                self.path.display()
-            );
-        }
+        self.write(ADBLOCK, enabled);
+    }
+
+    pub fn low_memory_enabled(&self) -> bool {
+        is_enabled(&self.read(), LOW_MEMORY)
+    }
+
+    pub fn set_low_memory_enabled(&self, enabled: bool) {
+        self.write(LOW_MEMORY, enabled);
     }
 
     fn read(&self) -> String {
@@ -39,15 +54,27 @@ impl Preferences {
             String::new()
         })
     }
+
+    fn write(&self, toggle: Toggle, enabled: bool) {
+        let contents = with_toggle(&self.read(), toggle, enabled);
+        if let Err(error) = files::write_atomically(&self.path, &contents) {
+            eprintln!(
+                "Não foi possível salvar as preferências em {}: {error}",
+                self.path.display()
+            );
+        }
+    }
 }
 
-fn adblock_enabled(contents: &str) -> bool {
-    parse(contents).boolean(GROUP, ADBLOCK_KEY).unwrap_or(true)
+fn is_enabled(contents: &str, toggle: Toggle) -> bool {
+    parse(contents)
+        .boolean(GROUP, toggle.key)
+        .unwrap_or(toggle.default)
 }
 
-fn with_adblock(contents: &str, enabled: bool) -> String {
+fn with_toggle(contents: &str, toggle: Toggle, enabled: bool) -> String {
     let keys = parse(contents);
-    keys.set_boolean(GROUP, ADBLOCK_KEY, enabled);
+    keys.set_boolean(GROUP, toggle.key, enabled);
     keys.to_data().to_string()
 }
 
@@ -63,30 +90,44 @@ fn parse(contents: &str) -> KeyFile {
 
 #[cfg(test)]
 mod tests {
-    use super::{adblock_enabled, with_adblock};
+    use super::{ADBLOCK, LOW_MEMORY, is_enabled, with_toggle};
 
     #[test]
     fn adblock_is_enabled_by_default() {
-        assert!(adblock_enabled(""));
-        assert!(adblock_enabled("[outro]\nchave=1\n"));
+        assert!(is_enabled("", ADBLOCK));
+        assert!(is_enabled("[outro]\nchave=1\n", ADBLOCK));
     }
 
     #[test]
     fn remembers_disabled_adblock() {
-        let contents = with_adblock("", false);
-        assert!(!adblock_enabled(&contents));
-        assert!(adblock_enabled(&with_adblock(&contents, true)));
+        let contents = with_toggle("", ADBLOCK, false);
+        assert!(!is_enabled(&contents, ADBLOCK));
+        assert!(is_enabled(&with_toggle(&contents, ADBLOCK, true), ADBLOCK));
+    }
+
+    #[test]
+    fn low_memory_is_disabled_by_default() {
+        assert!(!is_enabled("", LOW_MEMORY));
+    }
+
+    #[test]
+    fn toggles_are_stored_independently() {
+        let contents = with_toggle("", LOW_MEMORY, true);
+        let contents = with_toggle(&contents, ADBLOCK, false);
+        assert!(is_enabled(&contents, LOW_MEMORY));
+        assert!(!is_enabled(&contents, ADBLOCK));
     }
 
     #[test]
     fn keeps_unrelated_settings() {
-        let contents = with_adblock("[outro]\nchave=valor\n", false);
+        let contents = with_toggle("[outro]\nchave=valor\n", ADBLOCK, false);
         assert!(contents.contains("chave=valor"));
-        assert!(!adblock_enabled(&contents));
+        assert!(!is_enabled(&contents, ADBLOCK));
     }
 
     #[test]
     fn invalid_files_fall_back_to_defaults() {
-        assert!(adblock_enabled("isto não é ini"));
+        assert!(is_enabled("isto não é ini", ADBLOCK));
+        assert!(!is_enabled("isto não é ini", LOW_MEMORY));
     }
 }

@@ -5,6 +5,7 @@ pub mod bookmarks;
 pub mod downloads;
 pub mod history;
 pub mod library;
+pub mod low_memory;
 pub mod menu;
 pub mod permissions;
 pub mod preferences;

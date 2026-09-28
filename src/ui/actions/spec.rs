@@ -28,6 +28,23 @@ pub fn register<A: ActionSpec>(
     simple
 }
 
+pub fn register_toggle<A: ActionSpec>(
+    map: &impl IsA<gio::ActionMap>,
+    action: A,
+    initial: bool,
+    changed: impl Fn(bool) + 'static,
+) {
+    let simple = gio::SimpleAction::new_stateful(action.name(), None, &initial.to_variant());
+    simple.connect_change_state(move |simple, state| {
+        let Some(enabled) = state.and_then(|state| state.get::<bool>()) else {
+            return;
+        };
+        simple.set_state(&enabled.to_variant());
+        changed(enabled);
+    });
+    map.add_action(&simple);
+}
+
 pub fn register_accels<A: ActionSpec>(app: &Application, actions: impl IntoIterator<Item = A>) {
     for action in actions {
         app.set_accels_for_action(&action.detailed_name(), action.accels());

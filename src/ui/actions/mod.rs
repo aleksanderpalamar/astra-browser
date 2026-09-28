@@ -8,4 +8,4 @@ pub use app::AppAction;
 pub use catalog::BrowserAction;
 pub use handler::{BackForwardActions, install};
 pub use library::LibraryAction;
-pub use spec::{ActionSpec, register, register_accels};
+pub use spec::{ActionSpec, register, register_accels, register_toggle};

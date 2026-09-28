@@ -1,18 +1,31 @@
 use gtk::glib;
 use webkit6::prelude::*;
-use webkit6::{NetworkError, NetworkSession, PolicyError, UserContentManager, WebContext, WebView};
+use webkit6::{
+    NetworkError, NetworkSession, PolicyError, Settings, UserContentManager, WebContext, WebView,
+};
 
+use crate::browser::memory_mode::MemoryMode;
 use crate::browser::{downloads, media_support};
 
 #[derive(Clone)]
 pub struct WebViewFactory {
     context: WebContext,
     content: UserContentManager,
+    settings: Settings,
 }
 
 impl WebViewFactory {
     pub fn new(context: WebContext, content: UserContentManager) -> Self {
-        Self { context, content }
+        Self {
+            context,
+            content,
+            settings: shared_settings(),
+        }
+    }
+
+    pub fn set_memory_mode(&self, mode: MemoryMode) {
+        self.context.set_cache_model(mode.cache_model());
+        self.settings.set_enable_page_cache(mode.keeps_page_cache());
     }
 
     pub fn create(&self, session: &NetworkSession) -> WebView {
@@ -20,10 +33,10 @@ impl WebViewFactory {
             .web_context(&self.context)
             .network_session(session)
             .user_content_manager(&self.content)
+            .settings(&self.settings)
             .hexpand(true)
             .vexpand(true)
             .build();
-        configure(&webview);
         report_failures(&webview);
         downloads::download_unsupported_responses(&webview);
         media_support::report_on_first_load(&webview);
@@ -31,15 +44,13 @@ impl WebViewFactory {
     }
 }
 
-fn configure(webview: &WebView) {
-    let Some(settings) = WebViewExt::settings(webview) else {
-        eprintln!("Configurações do WebView indisponíveis");
-        return;
-    };
+fn shared_settings() -> Settings {
+    let settings = Settings::new();
     settings.set_enable_developer_extras(true);
     settings.set_enable_media_stream(true);
     settings.set_enable_webrtc(true);
     settings.set_enable_smooth_scrolling(false);
+    settings
 }
 
 fn report_failures(webview: &WebView) {
