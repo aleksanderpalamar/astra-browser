@@ -10,9 +10,8 @@ pub use weak::WeakTabs;
 use gtk::prelude::*;
 use gtk::{Button, Notebook, PackType, glib};
 use webkit6::prelude::*;
-use webkit6::{NetworkSession, WebView};
+use webkit6::{NetworkSession, UserContentManager, WebView};
 
-use crate::browser::engine::WebEngine;
 use crate::browser::webview;
 use crate::ui::actions::{ActionSpec, BrowserAction};
 use label::TabLabel;
@@ -21,11 +20,11 @@ use label::TabLabel;
 pub struct Tabs {
     notebook: Notebook,
     session: NetworkSession,
-    engine: WebEngine,
+    content: UserContentManager,
 }
 
 impl Tabs {
-    pub fn new(session: NetworkSession, engine: WebEngine) -> Self {
+    pub fn new(session: NetworkSession, content: UserContentManager) -> Self {
         let notebook = Notebook::builder()
             .scrollable(true)
             .show_border(false)
@@ -35,7 +34,7 @@ impl Tabs {
         Self {
             notebook,
             session,
-            engine,
+            content,
         }
     }
 
@@ -48,7 +47,7 @@ impl Tabs {
     }
 
     pub fn open(&self, uri: &str) {
-        let webview = webview::create(&self.session, &self.engine);
+        let webview = webview::create(&self.session, &self.content);
         let label = TabLabel::new(&webview);
         label.connect_close(glib::clone!(
             #[weak(rename_to = tabs)]
