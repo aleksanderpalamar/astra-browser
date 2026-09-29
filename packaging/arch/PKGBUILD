@@ -1,0 +1,70 @@
+pkgname=astra-browser
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Navegador web desktop minimalista em Rust com GTK4 e WebKitGTK"
+arch=('x86_64')
+url="https://github.com/aleksanderpalamar/astra-browser"
+license=('GPL-3.0-only')
+
+depends=(
+    'gtk4'
+    'webkitgtk-6.0'
+    'gst-plugins-good'
+    'gst-plugins-bad'
+    'gst-libav'
+)
+
+makedepends=(
+    'cargo'
+    'pkgconf'
+)
+
+source=(
+    "$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz"
+)
+
+sha256sums=(
+    'SKIP'
+)
+
+build() {
+    cd "$pkgname-$pkgver"
+
+    cargo build \
+        --release \
+        --locked
+}
+
+package() {
+    cd "$pkgname-$pkgver"
+
+    local app_id="io.github.aleksanderpalamar.AstraBrowser"
+
+    install -Dm755 \
+        target/release/astra-browser \
+        "$pkgdir/usr/bin/astra-browser"
+
+    install -Dm644 \
+        "data/$app_id.desktop" \
+        "$pkgdir/usr/share/applications/$app_id.desktop"
+
+    install -Dm644 \
+        data/icons/src/astra.svg \
+        "$pkgdir/usr/share/icons/hicolor/scalable/apps/$app_id.svg"
+
+    install -Dm644 \
+        data/icons/src/astra-symbolic.svg \
+        "$pkgdir/usr/share/icons/hicolor/symbolic/apps/$app_id-symbolic.svg"
+
+    for png in data/icons/hicolor/*/apps/"$app_id".png; do
+        size="$(basename "$(dirname "$(dirname "$png")")")"
+
+        install -Dm644 \
+            "$png" \
+            "$pkgdir/usr/share/icons/hicolor/$size/apps/$app_id.png"
+    done
+
+    install -Dm644 \
+        LICENSE \
+        "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

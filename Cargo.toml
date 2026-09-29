@@ -4,6 +4,9 @@ version = "0.1.0"
 edition = "2024"
 rust-version = "1.85"
 description = "Astra Browser: navegador web desktop minimalista em Rust com GTK4 e WebKitGTK 6.0"
+license = "GPL-3.0-only"
+repository = "https://github.com/aleksanderpalamar/astra-browser"
+readme = "README.md"
 publish = false
 
 [dependencies]
@@ -13,3 +16,54 @@ psl = "2.1"
 serde_json = "1.0"
 url = "2.5"
 webkit6 = "0.6"
+
+[package.metadata.deb]
+maintainer = "Aleksander Palamar <apalamardev@gmail.com>"
+section = "web"
+priority = "optional"
+depends = "$auto"
+
+assets = [
+    ["target/release/astra-browser", "usr/bin/", "755"],
+    [
+        "data/io.github.aleksanderpalamar.AstraBrowser.desktop",
+        "usr/share/applications/",
+        "644"
+    ],
+    [
+        "data/icons/src/astra.svg",
+        "usr/share/icons/hicolor/scalable/apps/io.github.aleksanderpalamar.AstraBrowser.svg",
+        "644"
+    ],
+    [
+        "data/icons/src/astra-symbolic.svg",
+        "usr/share/icons/hicolor/symbolic/apps/io.github.aleksanderpalamar.AstraBrowser-symbolic.svg",
+        "644"
+    ]
+]
+
+[package.metadata.generate-rpm]
+release = "1"
+
+assets = [
+    {
+        source = "target/release/astra-browser",
+        dest = "/usr/bin/astra-browser",
+        mode = "0755"
+    },
+    {
+        source = "data/io.github.aleksanderpalamar.AstraBrowser.desktop",
+        dest = "/usr/share/applications/io.github.aleksanderpalamar.AstraBrowser.desktop",
+        mode = "0644"
+    },
+    {
+        source = "data/icons/src/astra.svg",
+        dest = "/usr/share/icons/hicolor/scalable/apps/io.github.aleksanderpalamar.AstraBrowser.svg",
+        mode = "0644"
+    },
+    {
+        source = "data/icons/src/astra-symbolic.svg",
+        dest = "/usr/share/icons/hicolor/symbolic/apps/io.github.aleksanderpalamar.AstraBrowser-symbolic.svg",
+        mode = "0644"
+    }
+]
