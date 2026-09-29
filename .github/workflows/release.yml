@@ -27,8 +27,6 @@ jobs:
             gst-plugins-bad \
             gst-libav
 
-          rustup default stable
-
       - name: Checkout repository
         uses: actions/checkout@v6
 
@@ -36,11 +34,12 @@ jobs:
         run: |
           useradd -m builder
           chown -R builder:builder "$GITHUB_WORKSPACE"
+          runuser -u builder -- env HOME=/home/builder rustup default stable
 
       - name: Build Arch package
         run: |
           cd packaging/arch
-          runuser -u builder -- makepkg -sf --noconfirm
+          runuser -u builder -- env HOME=/home/builder makepkg -sf --noconfirm
 
       - name: Upload Arch package
         uses: actions/upload-artifact@v4
