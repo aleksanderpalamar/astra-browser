@@ -9,8 +9,13 @@ permissions:
   contents: read
 
 jobs:
+  quality:
+    name: Quality Gate
+    uses: ./.github/workflows/pr-quality-gate.yml
+
   arch:
     name: Arch Linux package
+    needs: quality
     runs-on: ubuntu-latest
     container:
       image: archlinux:base-devel
@@ -69,6 +74,7 @@ jobs:
 
   deb:
     name: Debian package
+    needs: quality
     runs-on: ubuntu-24.04
 
     steps:
@@ -112,6 +118,7 @@ jobs:
 
   rpm:
     name: RPM package
+    needs: quality
     runs-on: ubuntu-latest
     container:
       image: fedora:latest
