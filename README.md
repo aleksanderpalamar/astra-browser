@@ -374,6 +374,11 @@ diretório (data, endereço e título), limitado às 5 000 visitas mais recentes
 - O bloqueio no YouTube depende da estrutura atual do site; mudanças do YouTube
   (ou seus avisos contra bloqueadores) podem exigir ajustes no scriptlet e nas
   regras extras.
+- Serviços com DRM (Prime Video, Netflix, Disney+, Spotify Web...) não
+  reproduzem conteúdo. O `webkitgtk-6.0` do Arch é compilado sem Encrypted
+  Media Extensions (`navigator.requestMediaKeySystemAccess` não existe, mesmo
+  com a opção ligada), e o WebKitGTK não suporta o Widevine, o DRM que esses
+  serviços exigem. É uma limitação da engine, a mesma do Epiphany.
 - WebRTC depende do WebKitGTK do sistema: o Astra liga a opção, mas o pacote
   `webkitgtk-6.0` do Arch é compilado sem WebRTC (`RTCPeerConnection` não
   existe). Chamadas de vídeo e o modo de conversa por voz do ChatGPT não
