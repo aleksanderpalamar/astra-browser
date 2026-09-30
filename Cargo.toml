@@ -19,9 +19,12 @@ webkit6 = "0.6"
 
 [package.metadata.deb]
 maintainer = "Aleksander Palamar <apalamardev@gmail.com>"
+copyright = "2026, Aleksander Palamar <apalamardev@gmail.com>"
 section = "web"
 priority = "optional"
-depends = "$auto"
+extended-description = "Navegador web minimalista com interface nativa GTK4 e renderização pelo WebKitGTK 6.0, com abas, favoritos, histórico, downloads, modo privado, bloqueador de anúncios e ferramentas do desenvolvedor."
+depends = "$auto, gstreamer1.0-plugins-good, gstreamer1.0-plugins-bad, gstreamer1.0-libav"
+license-file = ["LICENSE", "0"]
 
 assets = [
     ["target/release/astra-browser", "usr/bin/", "755"],
@@ -39,11 +42,24 @@ assets = [
         "data/icons/src/astra-symbolic.svg",
         "usr/share/icons/hicolor/symbolic/apps/io.github.aleksanderpalamar.AstraBrowser-symbolic.svg",
         "644"
+    ],
+    [
+        "data/icons/hicolor/**/*.png",
+        "usr/share/icons/hicolor/",
+        "644"
     ]
 ]
 
 [package.metadata.generate-rpm]
 release = "1"
+auto-req = "disabled"
+
+[package.metadata.generate-rpm.requires]
+gtk4 = ">= 4.10"
+"webkitgtk6.0" = "*"
+gstreamer1-plugins-good = "*"
+gstreamer1-plugins-bad-free = "*"
+gstreamer1-plugin-libav = "*"
 
 [[package.metadata.generate-rpm.assets]]
 source = "target/release/astra-browser"
@@ -63,4 +79,14 @@ mode = "0644"
 [[package.metadata.generate-rpm.assets]]
 source = "data/icons/src/astra-symbolic.svg"
 dest = "/usr/share/icons/hicolor/symbolic/apps/io.github.aleksanderpalamar.AstraBrowser-symbolic.svg"
+mode = "0644"
+
+[[package.metadata.generate-rpm.assets]]
+source = "data/icons/hicolor/**/*.png"
+dest = "/usr/share/icons/hicolor/"
+mode = "0644"
+
+[[package.metadata.generate-rpm.assets]]
+source = "LICENSE"
+dest = "/usr/share/licenses/astra-browser/LICENSE"
 mode = "0644"
