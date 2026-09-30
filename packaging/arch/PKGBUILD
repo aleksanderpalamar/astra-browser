@@ -5,6 +5,7 @@ pkgdesc="Navegador web desktop minimalista em Rust com GTK4 e WebKitGTK"
 arch=('x86_64')
 url="https://github.com/aleksanderpalamar/astra-browser"
 license=('GPL-3.0-only')
+options=('!debug')
 
 depends=(
     'gtk4'
