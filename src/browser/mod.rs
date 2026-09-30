@@ -5,6 +5,7 @@ pub mod download_name;
 pub mod downloads;
 pub mod inspector;
 pub mod media_formats;
+pub mod media_loop;
 pub mod media_support;
 pub mod memory_mode;
 pub mod mode;

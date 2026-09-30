@@ -95,6 +95,12 @@ renderização feita pelo **WebKitGTK 6.0**. Toda a aplicação ao redor da engi
   passar de cerca de 676 MiB (33%), o WebKit começa a liberar memória não
   essencial e, a partir de 1 GiB (50%), também a essencial. Nenhuma página é
   encerrada por excesso de memória.
+- Vídeos em loop carregados por Media Source Extensions (ex.: Shorts do
+  YouTube) reiniciam pouco antes do fim: 0,35 s, proporcionalmente mais em
+  velocidade acelerada. Ao chegar ao fim, o WebKitGTK congela a imagem por
+  alguns segundos ao reiniciar o loop enquanto o áudio continua; reiniciando
+  antes do fim, o vídeo nunca chega a esse estado. Vídeos pausados, clipes
+  muito curtos e vídeos que não usam MSE seguem o loop normal.
 - Na primeira página carregada, o navegador pergunta ao WebKit se consegue
   reproduzir os formatos de mídia essenciais da web (VP9, H.264, Opus, AAC) e
   avisa no `stderr` quais plugins do GStreamer instalar se faltar algum.
@@ -271,6 +277,10 @@ src/
 │   ├── download_name.rs nome de destino único e seguro na pasta de downloads
 │   ├── inspector.rs     Web Inspector: habilitar e abrir/fechar na aba ativa
 │   ├── media_formats.rs formatos de mídia essenciais e mensagem de aviso
+│   ├── media_loop/
+│   │   ├── mod.rs       script de página que reinicia vídeos MSE em loop antes do fim
+│   │   ├── policy.js    decisão: quando e para onde reiniciar (testada via JavaScriptCore)
+│   │   └── guard.js     detecção de MSE, shadow DOM e aplicação do reinício
 │   ├── media_support.rs consulta ao WebKit sobre os formatos suportados
 │   ├── memory_mode.rs   MemoryMode: modelo de cache e cache de páginas de cada modo
 │   ├── mode.rs          BrowsingMode: sessão de rede e gravação de histórico
@@ -340,8 +350,10 @@ src/
   ordem das abas (`ui/tabs/order.rs`), as regras de favoritos e histórico
   (`library/`), o nome de destino dos downloads (`browser/download_name.rs`),
   a política de recuperação de travamentos (`browser/crash/policy.rs`), os
-  modos de memória (`browser/memory_mode.rs`) e a apresentação dos pop-ups
-  (`browser/popup.rs`) são determinísticos e têm testes unitários.
+  modos de memória (`browser/memory_mode.rs`), a apresentação dos pop-ups
+  (`browser/popup.rs`) e a decisão de reinício dos loops de vídeo
+  (`browser/media_loop/policy.js`, executada no JavaScriptCore pelos testes)
+  são determinísticos e têm testes unitários.
 
 Os cookies da navegação normal são gravados em
 `~/.local/share/astra-browser/cookies.sqlite`, o que mantém os logins dos sites
