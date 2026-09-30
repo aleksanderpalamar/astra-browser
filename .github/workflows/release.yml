@@ -30,6 +30,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      - name: Apply version from tag
+        run: |
+          version="$(./scripts/apply-tag-version.sh "$GITHUB_REF_NAME")"
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      - name: Create source tarball
+        run: |
+          snapshot="$(git -c user.name=ci -c user.email=ci@localhost stash create)"
+          git archive \
+            --format=tar.gz \
+            --prefix="astra-browser-$VERSION/" \
+            --output="packaging/arch/astra-browser-$VERSION.tar.gz" \
+            "${snapshot:-HEAD}"
+
       - name: Prepare build user
         run: |
           useradd -m builder
@@ -55,6 +69,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+
+      - name: Apply version from tag
+        run: |
+          version="$(./scripts/apply-tag-version.sh "$GITHUB_REF_NAME")"
+          echo "VERSION=$version" >> "$GITHUB_ENV"
 
       - name: Install native dependencies
         run: |
@@ -102,6 +121,11 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@v6
+
+      - name: Apply version from tag
+        run: |
+          version="$(./scripts/apply-tag-version.sh "$GITHUB_REF_NAME")"
+          echo "VERSION=$version" >> "$GITHUB_ENV"
 
       - name: Install cargo-generate-rpm
         run: cargo install cargo-generate-rpm --locked
