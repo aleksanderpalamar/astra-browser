@@ -172,6 +172,21 @@ cargo fmt --check
 cargo clippy -- -D warnings
 ```
 
+## Versões e pacotes
+
+Para publicar uma versão, crie e envie uma tag no formato `vMAJOR.MINOR.PATCH`:
+
+```bash
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+O workflow `Release Packages` usa a versão da tag (`0.2.0`) em todos os
+pacotes, sem precisar editar o `Cargo.toml` antes: gera os pacotes Arch
+(`.pkg.tar.zst`), Debian (`.deb`) e RPM (`.rpm`) do commit da tag e os publica
+em uma release do GitHub. Tags fora desse formato (ex.: `v0.2`, `v0.2.0-rc1`)
+fazem o workflow falhar antes de gerar qualquer pacote.
+
 ## Atalhos de teclado
 
 | Atalho                         | Ação                                         |
@@ -210,7 +225,8 @@ data/
 scripts/
 ├── install.sh           instala binário, atalho e ícones em ~/.local
 ├── uninstall.sh         remove a instalação
-└── render-icons.sh      gera os PNGs a partir dos SVGs
+├── render-icons.sh      gera os PNGs a partir dos SVGs
+└── apply-tag-version.sh aplica a versão da tag de release no Cargo.toml, Cargo.lock e PKGBUILD
 src/
 ├── main.rs              ponto de entrada
 ├── app.rs               ciclo de vida do GtkApplication, ações, atalhos e ícone
