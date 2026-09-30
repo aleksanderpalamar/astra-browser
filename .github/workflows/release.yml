@@ -55,6 +55,11 @@ jobs:
           cd packaging/arch
           runuser -u builder -- env HOME=/home/builder makepkg -sf --noconfirm
 
+      - name: Install and check Arch package
+        run: |
+          pacman -U --noconfirm "packaging/arch/astra-browser-${VERSION}-1-x86_64.pkg.tar.zst"
+          test "$(pacman -Q astra-browser)" = "astra-browser ${VERSION}-1"
+
       - name: Upload Arch package
         uses: actions/upload-artifact@v4
         with:
@@ -92,6 +97,11 @@ jobs:
 
       - name: Build Debian package
         run: cargo deb --no-build
+
+      - name: Install and check Debian package
+        run: |
+          sudo apt-get install -y "./target/debian/astra-browser_${VERSION}-1_amd64.deb"
+          test "$(dpkg-query -W -f='${Version}' astra-browser)" = "${VERSION}-1"
 
       - name: Upload Debian package
         uses: actions/upload-artifact@v4
@@ -138,6 +148,11 @@ jobs:
 
       - name: Build RPM package
         run: cargo generate-rpm
+
+      - name: Install and check RPM package
+        run: |
+          dnf install -y "./target/generate-rpm/astra-browser-${VERSION}-1.x86_64.rpm"
+          test "$(rpm -q --queryformat '%{VERSION}-%{RELEASE}' astra-browser)" = "${VERSION}-1"
 
       - name: Upload RPM package
         uses: actions/upload-artifact@v4
