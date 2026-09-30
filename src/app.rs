@@ -5,6 +5,7 @@ use gtk::{Application, ApplicationWindow, glib};
 use webkit6::NetworkSession;
 
 use crate::browser::adblock::AdBlocker;
+use crate::browser::media_loop;
 use crate::browser::memory_mode::MemoryMode;
 use crate::browser::mode::BrowsingMode;
 use crate::browser::webview::WebViewFactory;
@@ -20,6 +21,9 @@ pub fn run() -> glib::ExitCode {
     let app = Application::builder().application_id(APP_ID).build();
     let library = Library::open();
     let adblocker = AdBlocker::new(&files::data_path(FILTERS_DIRECTORY));
+    adblocker
+        .content_manager()
+        .add_script(&media_loop::loop_guard_script());
     let memory_mode = MemoryMode::from_low_memory(library.preferences.low_memory_enabled());
     let webviews = WebViewFactory::new(
         context::create(memory_mode),

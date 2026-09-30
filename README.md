@@ -95,6 +95,10 @@ renderização feita pelo **WebKitGTK 6.0**. Toda a aplicação ao redor da engi
   passar de cerca de 676 MiB (33%), o WebKit começa a liberar memória não
   essencial e, a partir de 1 GiB (50%), também a essencial. Nenhuma página é
   encerrada por excesso de memória.
+- Vídeos em loop carregados por Media Source Extensions (ex.: Shorts do
+  YouTube) reiniciam 0,35 s antes do fim. Ao chegar ao fim, o WebKitGTK
+  congela a imagem por alguns segundos ao reiniciar o loop enquanto o áudio
+  continua; reiniciando antes do fim, o vídeo nunca chega a esse estado.
 - Na primeira página carregada, o navegador pergunta ao WebKit se consegue
   reproduzir os formatos de mídia essenciais da web (VP9, H.264, Opus, AAC) e
   avisa no `stderr` quais plugins do GStreamer instalar se faltar algum.
@@ -271,6 +275,8 @@ src/
 │   ├── download_name.rs nome de destino único e seguro na pasta de downloads
 │   ├── inspector.rs     Web Inspector: habilitar e abrir/fechar na aba ativa
 │   ├── media_formats.rs formatos de mídia essenciais e mensagem de aviso
+│   ├── media_loop.rs    script que reinicia vídeos MSE em loop antes do fim
+│   ├── media_loop.js    reinício do loop 0,35 s antes do fim (contorno do WebKitGTK)
 │   ├── media_support.rs consulta ao WebKit sobre os formatos suportados
 │   ├── memory_mode.rs   MemoryMode: modelo de cache e cache de páginas de cada modo
 │   ├── mode.rs          BrowsingMode: sessão de rede e gravação de histórico
