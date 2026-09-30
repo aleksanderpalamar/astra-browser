@@ -36,17 +36,15 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Apply version from tag
-        run: |
-          version="$(./scripts/apply-tag-version.sh "$GITHUB_REF_NAME")"
-          echo "VERSION=$version" >> "$GITHUB_ENV"
+        run: ./scripts/apply-tag-version.sh "$GITHUB_REF_NAME" >> "$GITHUB_ENV"
 
       - name: Create source tarball
         run: |
           snapshot="$(git -c user.name=ci -c user.email=ci@localhost stash create)"
           git archive \
             --format=tar.gz \
-            --prefix="astra-browser-$VERSION/" \
-            --output="packaging/arch/astra-browser-$VERSION.tar.gz" \
+            --prefix="astra-browser-$ARCH_VERSION/" \
+            --output="packaging/arch/astra-browser-$ARCH_VERSION.tar.gz" \
             "${snapshot:-HEAD}"
 
       - name: Prepare build user
@@ -62,8 +60,8 @@ jobs:
 
       - name: Install and check Arch package
         run: |
-          pacman -U --noconfirm "packaging/arch/astra-browser-${VERSION}-1-x86_64.pkg.tar.zst"
-          test "$(pacman -Q astra-browser)" = "astra-browser ${VERSION}-1"
+          pacman -U --noconfirm "packaging/arch/astra-browser-${ARCH_VERSION}-1-x86_64.pkg.tar.zst"
+          test "$(pacman -Q astra-browser)" = "astra-browser ${ARCH_VERSION}-1"
 
       - name: Upload Arch package
         uses: actions/upload-artifact@v4
@@ -82,9 +80,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Apply version from tag
-        run: |
-          version="$(./scripts/apply-tag-version.sh "$GITHUB_REF_NAME")"
-          echo "VERSION=$version" >> "$GITHUB_ENV"
+        run: ./scripts/apply-tag-version.sh "$GITHUB_REF_NAME" >> "$GITHUB_ENV"
 
       - name: Install native dependencies
         run: |
@@ -106,8 +102,8 @@ jobs:
 
       - name: Install and check Debian package
         run: |
-          sudo apt-get install -y "./target/debian/astra-browser_${VERSION}-1_amd64.deb"
-          test "$(dpkg-query -W -f='${Version}' astra-browser)" = "${VERSION}-1"
+          sudo apt-get install -y "./target/debian/astra-browser_${PACKAGE_VERSION}-1_amd64.deb"
+          test "$(dpkg-query -W -f='${Version}' astra-browser)" = "${PACKAGE_VERSION}-1"
 
       - name: Upload Debian package
         uses: actions/upload-artifact@v4
@@ -140,9 +136,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Apply version from tag
-        run: |
-          version="$(./scripts/apply-tag-version.sh "$GITHUB_REF_NAME")"
-          echo "VERSION=$version" >> "$GITHUB_ENV"
+        run: ./scripts/apply-tag-version.sh "$GITHUB_REF_NAME" >> "$GITHUB_ENV"
 
       - name: Install cargo-generate-rpm
         run: cargo install cargo-generate-rpm --locked
@@ -154,12 +148,12 @@ jobs:
         run: strip target/release/astra-browser
 
       - name: Build RPM package
-        run: cargo generate-rpm
+        run: cargo generate-rpm --set-metadata "version = \"$PACKAGE_VERSION\""
 
       - name: Install and check RPM package
         run: |
-          dnf install -y "./target/generate-rpm/astra-browser-${VERSION}-1.x86_64.rpm"
-          test "$(rpm -q --queryformat '%{VERSION}-%{RELEASE}' astra-browser)" = "${VERSION}-1"
+          dnf install -y "./target/generate-rpm/astra-browser-${PACKAGE_VERSION}-1.x86_64.rpm"
+          test "$(rpm -q --queryformat '%{VERSION}-%{RELEASE}' astra-browser)" = "${PACKAGE_VERSION}-1"
 
       - name: Upload RPM package
         uses: actions/upload-artifact@v4
@@ -192,8 +186,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          prerelease=()
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then
+            prerelease=(--prerelease)
+          fi
           gh release create "${GITHUB_REF_NAME}" \
             dist/* \
             --repo "${GITHUB_REPOSITORY}" \
             --title "Astra Browser ${GITHUB_REF_NAME}" \
-            --generate-notes
+            --generate-notes \
+            "${prerelease[@]}"

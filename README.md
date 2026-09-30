@@ -174,17 +174,30 @@ cargo clippy -- -D warnings
 
 ## Versões e pacotes
 
-Para publicar uma versão, crie e envie uma tag no formato `vMAJOR.MINOR.PATCH`:
+Para publicar uma versão, crie e envie uma tag no formato `vMAJOR.MINOR.PATCH`,
+ou `vMAJOR.MINOR.PATCH-canal[.N]` para uma pré-release:
 
 ```bash
-git tag v0.2.0
+git tag v0.2.0            # versão final
+git tag v1.0.0-beta.1     # pré-release (também: -canary, -dev, -rc.2...)
 git push origin v0.2.0
 ```
 
-O workflow `Release Packages` usa a versão da tag (`0.2.0`) em todos os
-pacotes, sem precisar editar o `Cargo.toml` antes: gera os pacotes Arch
-(`.pkg.tar.zst`), Debian (`.deb`) e RPM (`.rpm`) do commit da tag e os publica
-em uma release do GitHub. Tags fora desse formato (ex.: `v0.2`, `v0.2.0-rc1`)
+O workflow `Release Packages` usa a versão da tag em todos os pacotes, sem
+precisar editar o `Cargo.toml` antes: gera os pacotes Arch (`.pkg.tar.zst`),
+Debian (`.deb`) e RPM (`.rpm`) do commit da tag e os publica em uma release do
+GitHub. Cada formato escreve a pré-release do jeito que o seu gerenciador de
+pacotes entende como anterior à versão final:
+
+| Tag             | Binário (Cargo) | `.deb` e `.rpm` | Arch          |
+| --------------- | --------------- | --------------- | ------------- |
+| `v1.0.0`        | `1.0.0`         | `1.0.0`         | `1.0.0`       |
+| `v1.0.0-beta.1` | `1.0.0-beta.1`  | `1.0.0~beta.1`  | `1.0.0beta.1` |
+
+Tags com canal viram uma release marcada como pré-release no GitHub. O canal usa
+letras minúsculas e, opcionalmente, um número (`beta`, `beta.2`, `canary.3`);
+entre canais vale a ordem alfabética do SemVer (`alpha` < `beta` < `canary` <
+`dev` < `rc`). Tags fora desse formato (ex.: `v0.2`, `v1.0.0-rc2`, `v01.0.0`)
 fazem o workflow falhar antes de gerar qualquer pacote.
 
 ## Atalhos de teclado
