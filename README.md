@@ -103,7 +103,7 @@ renderização feita pelo **WebKitGTK 6.0**. Toda a aplicação ao redor da engi
 ## Requisitos
 
 - Linux (desenvolvido e testado no Arch Linux, GNOME sobre Wayland)
-- Rust stable (edition 2024, Rust ≥ 1.85)
+- Rust stable (edition 2024, Rust ≥ 1.92)
 - GTK ≥ 4.10
 - WebKitGTK 6.0
 - Plugins do GStreamer para áudio e vídeo (`gst-plugins-good`, `gst-plugins-bad`,

@@ -20,7 +20,7 @@ env:
 
 jobs:
   msrv:
-    name: MSRV Rust 1.85
+    name: MSRV Rust 1.92
     runs-on: ubuntu-24.04
     timeout-minutes: 20
 
@@ -37,11 +37,11 @@ jobs:
             libgtk-4-dev \
             libwebkitgtk-6.0-dev
 
-      - name: Install Rust 1.85
-        run: rustup toolchain install 1.85.0 --profile minimal
+      - name: Install Rust 1.92
+        run: rustup toolchain install 1.92.0 --profile minimal
 
       - name: Check MSRV
-        run: cargo +1.85.0 check --locked
+        run: cargo +1.92.0 check --locked
 
   quality-gate:
     name: Quality Gate

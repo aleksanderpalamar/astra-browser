@@ -80,10 +80,10 @@ fn with_toggle(contents: &str, toggle: Toggle, enabled: bool) -> String {
 
 fn parse(contents: &str) -> KeyFile {
     let keys = KeyFile::new();
-    if let Err(error) = keys.load_from_data(contents, KeyFileFlags::KEEP_COMMENTS) {
-        if !contents.trim().is_empty() {
-            eprintln!("Preferências inválidas; usando os valores padrão: {error}");
-        }
+    if let Err(error) = keys.load_from_data(contents, KeyFileFlags::KEEP_COMMENTS)
+        && !contents.trim().is_empty()
+    {
+        eprintln!("Preferências inválidas; usando os valores padrão: {error}");
     }
     keys
 }
